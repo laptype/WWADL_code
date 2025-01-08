@@ -192,7 +192,7 @@ class Trainer(object):
         mini_train_loss = float('inf')
         saver = None
         if self.rank == 0:
-            saver = BestModelSaver(self.check_point_path, max_models=10)  # 初始化最佳模型管理
+            saver = BestModelSaver(self.check_point_path, max_models=5)  # 初始化最佳模型管理
 
         for epoch in range(self.num_epoch):
             train_sampler.set_epoch(epoch+self.rank) # 打乱分配的数据

@@ -21,6 +21,7 @@ class wifiTAD_config(Config):
         self.skip_ds_layer = 3
         self.priors = 128
         self.in_channels = int(in_channels)
+        print(f'self.in_channels: {self.in_channels}')
 
 def wifiTAD(config: wifiTAD_config):
     net = wifitad(config)

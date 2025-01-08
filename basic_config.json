@@ -48,5 +48,11 @@
     "loss": {
         "lw": 10,
         "cw": 1
+    },
+    "testing": {
+        "top_k": 250,
+        "nms_thresh": 0.5,
+        "nms_sigma": 0.95,
+        "conf_thresh": 0.01
     }
 }

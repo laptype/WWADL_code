@@ -90,7 +90,7 @@ def detection_collate(batch):
 if __name__ == '__main__':
 
     # train_dataset = WWADLDatasetSingle('/data/WWADL/dataset/imu_30_3', split='train')
-    train_dataset = WWADLDatasetSingle('/data/WWADL/dataset/wifi_30_3', split='train')
+    train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/wifi_30_3', split='train')
 
     from torch.utils.data import DataLoader
 

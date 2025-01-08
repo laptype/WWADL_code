@@ -10,6 +10,8 @@ import argparse
 import torch
 import json
 from training import train
+from testing import test
+
 def load_setting(url: str)->dict:
     with open(url, 'r') as f:
         data = json.load(f)
@@ -66,3 +68,5 @@ if __name__ == '__main__':
     config = load_setting(args.config_path)
     if args.is_train:
         train(config=config)
+    else:
+        test(config=config)
