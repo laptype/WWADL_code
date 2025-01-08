@@ -2,12 +2,17 @@ import sys
 import os
 import torch
 
-project_path = '/home/lanbo/WWADL/WWADL_code'
+# project_path = '/home/lanbo/WWADL/WWADL_code'
+# dataset_root_path = '/data/WWADL/dataset'
+
+project_path = '/root/shared-nvme/code/WWADL_code'
+dataset_root_path = '/root/shared-nvme/dataset'
+
 sys.path.append(project_path)
 
 from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config
 from global_config import config
-dataset_root_path = '/data/WWADL/dataset'
+
 
 
 if __name__ == '__main__':
@@ -15,7 +20,7 @@ if __name__ == '__main__':
     day = get_day()
 
     model_str_list = [
-        ('wifiTAD', '34_2048_30', 32, 50)
+        ('wifiTAD', '34_2048_30', 16, 50)
     ]
 
     dataset_str_list = [
@@ -31,7 +36,7 @@ if __name__ == '__main__':
             config["training"]["DDP"]["enable"] = True
             config["training"]["DDP"]["devices"] = [0]
 
-            test_gpu = 3
+            test_gpu = 0
 
             # TAG ===============================================================================================
             tag = f'model_size'
@@ -44,7 +49,7 @@ if __name__ == '__main__':
             config['dataset']['clip_length'] = 1500
 
             config["training"]['num_epoch'] = epoch
-            config["training"]['batch_size'] = batch_size
+            config["training"]['train_batch_size'] = batch_size
 
             run = Run_config(config, 'train')
 
@@ -55,3 +60,6 @@ if __name__ == '__main__':
                 f"--master_port='29501' --use_env "
                 f"{run.main_path} --is_train true --config_path {run.config_path}"
             )
+
+            config['endtime'] = get_time()
+            write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))

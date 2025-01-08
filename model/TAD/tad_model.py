@@ -129,6 +129,8 @@ class wifitad(nn.Module):
 
         loc, conf, priors = self.pyramid_detection(x)
 
+        # print(priors.shape)
+
         return {
             'loc': loc,
             'conf': conf,

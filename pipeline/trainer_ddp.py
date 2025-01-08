@@ -124,7 +124,7 @@ class Trainer(object):
         self.optimizer.zero_grad()
 
         output_dict = self.model(data)
-        loss_l, loss_c = self.loss([output_dict['loc'], output_dict['conf'], output_dict["priors"][0]], targets)
+        loss_l, loss_c = self.loss([output_dict['loc'], output_dict['conf'], output_dict["priors"]], targets)
 
         loss_l = loss_l * self.lw * 100
         loss_c = loss_c * self.cw
@@ -185,7 +185,7 @@ class Trainer(object):
                                                  map_location=device))
 
         # 转为DDP模型 --------------------------------------------------------------------------------------
-        self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[self.gpu])
+        self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[self.gpu], find_unused_parameters=True)
 
         self._init_optimizer()
 
@@ -218,7 +218,7 @@ class Trainer(object):
                 cost_val += loss
 
                 if self.rank ==0:
-                    tbar.set_description('%s: Epoch: %d: ' % (self.model_info, epoch + 1))
+                    tbar.set_description('Epoch: %d: ' % (epoch + 1))
                     tbar.set_postfix(train_loss=loss)
 
             if self.rank==0:
@@ -230,7 +230,8 @@ class Trainer(object):
             plog = 'Epoch-{} Loss: Total - {:.5f}, loc - {:.5f}, conf - {:.5f}' \
                 .format(epoch, cost_val, loss_loc_val, loss_conf_val)
 
-            logging.info(plog)
+            if self.rank==0:
+                logging.info(plog)
 
             # 等待所有进程计算完毕
             torch.cuda.synchronize(device)

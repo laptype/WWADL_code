@@ -2,8 +2,9 @@ import os
 import sys
 import torch
 
-project_path = '/home/lanbo/WWADL/WWADL_code'
-sys.path.append(project_path)
+# project_path = '/home/lanbo/WWADL/WWADL_code'
+# project_path = '/root/shared-nvme/code/WWADL_code'
+# sys.path.append(project_path)
 
 import argparse
 import torch

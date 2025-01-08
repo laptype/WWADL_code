@@ -1,19 +1,19 @@
 {
-    "datetime": "2025_01-08_22:23:51",
+    "datetime": "2025_01-08_19:17:38",
     "endtime": "2025_05-17_21:52:58",
     "path": {
-        "dataset_path": "/root/shared-nvme/dataset/imu_30_3",
+        "dataset_path": "/data/WWADL/dataset/imu_30_3",
         "basic_path": {
-            "project_path": "/root/shared-nvme/code/WWADL_code",
-            "python_path": "/root/.conda/envs/test/bin/python",
-            "log_path": "/root/shared-nvme/code_result/log",
-            "result_path": "/root/shared-nvme/code_result/result"
+            "project_path": "/home/lanbo/WWADL/WWADL_code",
+            "python_path": "/home/lanbo/anaconda3/envs/test/bin/python3",
+            "log_path": "/data/WWADL/code_result/log",
+            "result_path": "/data/WWADL/code_result/result"
         },
         "log_path": {
-            "train": "/root/shared-nvme/code_result/log/25_01-08/model_size/WWADLDatasetSingle_imu_30_3_34_2048_30-TRAIN.log",
-            "test": "/root/shared-nvme/code_result/log/25_01-08/model_size/WWADLDatasetSingle_imu_30_3_34_2048_30-TEST.log"
+            "train": "/data/WWADL/code_result/log/25_01-08/model_size/WWADLDatasetSingle_imu_30_3_34_2048_30-TRAIN.log",
+            "test": "/data/WWADL/code_result/log/25_01-08/model_size/WWADLDatasetSingle_imu_30_3_34_2048_30-TEST.log"
         },
-        "result_path": "/root/shared-nvme/code_result/result/25_01-08/model_size/WWADLDatasetSingle_imu_30_3_34_2048_30"
+        "result_path": "/data/WWADL/code_result/result/25_01-08/model_size/WWADLDatasetSingle_imu_30_3_34_2048_30"
     },
     "dataset": {
         "dataset_name": "WWADLDatasetSingle",
@@ -41,9 +41,10 @@
         "DDP": {
             "enable": true,
             "devices": [
-                0
+                3
             ]
-        }
+        },
+        "batch_size": 32
     },
     "loss": {
         "lw": 10,

@@ -154,7 +154,6 @@ class MultiSegmentLoss(nn.Module):
         :return: loc loss and conf loss
         """
         loc_data, conf_data, priors = predictions
-        print(priors.shape, loc_data.shape)
 
         num_batch = loc_data.size(0)
         num_priors = priors.size(0)

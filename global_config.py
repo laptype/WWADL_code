@@ -1,6 +1,6 @@
 import json
 
-basic_config_path = '/home/lanbo/WWADL/WWADL_code/basic_config.json'
+basic_config_path = '/root/shared-nvme/code/WWADL_code/basic_config.json'
 
 with open(basic_config_path, 'r') as json_file:
     config = json.load(json_file)
