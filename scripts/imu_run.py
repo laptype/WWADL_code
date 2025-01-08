@@ -1,0 +1,57 @@
+import sys
+import os
+import torch
+
+project_path = '/home/lanbo/WWADL/WWADL_code'
+sys.path.append(project_path)
+
+from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config
+from global_config import config
+dataset_root_path = '/data/WWADL/dataset'
+
+
+if __name__ == '__main__':
+
+    day = get_day()
+
+    model_str_list = [
+        ('wifiTAD', '34_2048_30', 32, 50)
+    ]
+
+    dataset_str_list = [
+        ('WWADLDatasetSingle', 'imu_30_3')
+    ]
+
+    for dataset_str in dataset_str_list:
+        dataset_name, dataset = dataset_str
+        for model_str in model_str_list:
+            model_name, model_set, batch_size, epoch = model_str
+
+            config['datetime'] = get_time()
+            config["training"]["DDP"]["enable"] = True
+            config["training"]["DDP"]["devices"] = [0]
+
+            test_gpu = 3
+
+            # TAG ===============================================================================================
+            tag = f'model_size'
+
+            config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
+            config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
+            config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
+
+            config['dataset']['dataset_name'] = os.path.join(dataset_name)
+            config['dataset']['clip_length'] = 1500
+
+            config["training"]['num_epoch'] = epoch
+            config["training"]['batch_size'] = batch_size
+
+            run = Run_config(config, 'train')
+
+            write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
+
+            os.system(
+                f"CUDA_VISIBLE_DEVICES={run.ddp_devices} {run.python_path} -m torch.distributed.launch --nproc_per_node {run.nproc_per_node} "
+                f"--master_port='29501' --use_env "
+                f"{run.main_path} --is_train true --config_path {run.config_path}"
+            )
