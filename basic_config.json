@@ -25,7 +25,7 @@
         "backbone_name": "wifiTAD",
         "head_name": "",
         "strategy_name": "TAD",
-        "model_set": "34_2048_30"
+        "model_set": "34_2048_30_0"
     },
     "training": {
         "train_batch_size": 32,

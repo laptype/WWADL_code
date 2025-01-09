@@ -6,21 +6,23 @@ from model.TAD.module import ScaleExp
 from model.TAD.backbone import TSSE, LSREF
 from model.TAD.head import PredictionHead
 from utils.basic_config import Config
+# from torch.nn import SyncBatchNorm
 
 class wifiTAD_config(Config):
 
-    def __init__(self, model_set: str = '34_2048_30'):
+    def __init__(self, model_set: str = '34_2048_30_0'):
         """
         Initialize the wifiTAD_config instance with num_classes and input_length.
         Format: {num_classes}_{input_length}_{in_channels}
         """
-        num_classes, input_length, in_channels = model_set.split('_')
+        num_classes, input_length, in_channels, is_bn = model_set.split('_')
         self.num_classes = int(num_classes)
         self.input_length = int(input_length)
         self.layer_num = 3
         self.skip_ds_layer = 3
         self.priors = 128
         self.in_channels = int(in_channels)
+        self.is_bn = str(is_bn) == '1'
         print(f'self.in_channels: {self.in_channels}')
 
 def wifiTAD(config: wifiTAD_config):
@@ -96,7 +98,9 @@ class Pyramid_Detection(nn.Module):
 class wifitad(nn.Module):
     def __init__(self, config: wifiTAD_config):
         super(wifitad, self).__init__()
+        self.is_bn = config.is_bn
         self.embedding = Embedding(config.in_channels)
+
         self.pyramid_detection = Pyramid_Detection(
             skip_ds_layer=config.skip_ds_layer,
             layer_num=config.layer_num,
@@ -105,27 +109,42 @@ class wifitad(nn.Module):
             num_classes=config.num_classes
         )
         self.reset_params()
-        
+
     @staticmethod
     def weight_init(m):
+        """自定义权重初始化方法"""
         def glorot_uniform_(tensor):
             fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(tensor)
             scale = 1.0
-            scale /= max(1., (fan_in + fan_out) / 2.)
+            scale /= max(1.0, (fan_in + fan_out) / 2.0)
             limit = np.sqrt(3.0 * scale)
             return nn.init._no_grad_uniform_(tensor, -limit, limit)
 
-        if isinstance(m, nn.Conv1d) or isinstance(m, nn.Conv2d) or isinstance(m, nn.Conv3d) \
-                or isinstance(m, nn.ConvTranspose3d):
+        if isinstance(m, (nn.Conv1d, nn.Conv2d, nn.Conv3d, nn.ConvTranspose3d)):
             glorot_uniform_(m.weight)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
 
     def reset_params(self):
         for _, m in enumerate(self.modules()):
+            if isinstance(m, (nn.LayerNorm, nn.Identity)):
+                continue  # 跳过不需要初始化的层
             self.weight_init(m)
     
     def forward(self, x):
+        """
+        前向传播
+        输入数据形状: [batch_size, num_channels, seq_length]
+        """
+        # if self.is_bn:
+        #     x = self.batch_norm(x)  # 对输入数据进行归一化
         x = self.embedding(x)
 
         loc, conf, priors = self.pyramid_detection(x)

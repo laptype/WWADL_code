@@ -26,7 +26,8 @@ class BestModelSaver:
     def __init__(self, check_point_path, max_models=10):
         self.check_point_path = check_point_path
         self.max_models = max_models
-        self.best_models = []  # 存储模型信息的最小堆 [(metric, model_path), ...]
+        # 使用最大堆保存模型信息 [(负的metric, model_path), ...]
+        self.best_models = []
 
     def save_model(self, model_state_dict, model_name, metric):
         # 构造保存路径
@@ -35,11 +36,12 @@ class BestModelSaver:
         # 如果队列未满，直接保存模型
         if len(self.best_models) < self.max_models:
             torch.save(model_state_dict, model_path)
-            heapq.heappush(self.best_models, (metric, model_path))
+            # 保存负的metric以构造最大堆
+            heapq.heappush(self.best_models, (-metric, model_path))
             print(f"Model saved: {model_path} (Metric: {metric:.5f})")
         else:
-            # 检查是否优于当前最差模型
-            if metric < self.best_models[0][0]:  # 假设指标是损失，越小越好
+            # 检查是否优于当前最差模型（堆顶是负的最大值，对应正的最小值）
+            if metric < -self.best_models[0][0]:  # 假设指标是损失，越小越好
                 # 删除最差模型
                 _, worst_model_path = heapq.heappop(self.best_models)
                 if os.path.exists(worst_model_path):
@@ -48,13 +50,14 @@ class BestModelSaver:
 
                 # 保存新模型
                 torch.save(model_state_dict, model_path)
-                heapq.heappush(self.best_models, (metric, model_path))
+                heapq.heappush(self.best_models, (-metric, model_path))
                 print(f"Model saved: {model_path} (Metric: {metric:.5f})")
             else:
                 print(f"Model not saved. Metric: {metric:.5f} is worse than the top 10.")
 
     def get_best_models(self):
-        return sorted(self.best_models, key=lambda x: x[0])  # 返回按指标排序的模型列表
+        # 返回按指标从小到大排序的模型列表（还原负的metric）
+        return sorted([(-metric, path) for metric, path in self.best_models], key=lambda x: x[0])
 
 class Trainer(object):
     def __init__(self,
@@ -124,7 +127,8 @@ class Trainer(object):
         self.optimizer.zero_grad()
 
         output_dict = self.model(data)
-        loss_l, loss_c = self.loss([output_dict['loc'], output_dict['conf'], output_dict["priors"]], targets)
+        loc_p = output_dict['loc'].clamp(min=0)
+        loss_l, loss_c = self.loss([loc_p, output_dict['conf'], output_dict["priors"]], targets)
 
         loss_l = loss_l * self.lw * 100
         loss_c = loss_c * self.cw
@@ -134,11 +138,14 @@ class Trainer(object):
         loss.backward()
 
         # 同步
-        loss = reduce_value(loss, average=False)
+        # 同步总损失
+        reduced_loss = reduce_value(loss, average=True)  # 汇总所有进程的总损失
+        reduced_loss_l = reduce_value(loss_l, average=True)  # 汇总 loc 损失
+        reduced_loss_c = reduce_value(loss_c, average=True)  # 汇总 conf 损失
 
         self.optimizer.step()
 
-        return loss.item(), loss_l.item(), loss_c.item()
+        return reduced_loss.item(), reduced_loss_l.item(), reduced_loss_c.item()
 
     def training(self):
         # 给不同的进程分配不同的、固定的随机数种子
@@ -192,7 +199,7 @@ class Trainer(object):
         mini_train_loss = float('inf')
         saver = None
         if self.rank == 0:
-            saver = BestModelSaver(self.check_point_path, max_models=5)  # 初始化最佳模型管理
+            saver = BestModelSaver(self.check_point_path, max_models=1)  # 初始化最佳模型管理
 
         for epoch in range(self.num_epoch):
             train_sampler.set_epoch(epoch+self.rank) # 打乱分配的数据

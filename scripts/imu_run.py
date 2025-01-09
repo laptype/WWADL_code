@@ -20,12 +20,32 @@ if __name__ == '__main__':
     day = get_day()
 
     model_str_list = [
-        ('wifiTAD', 16, 50)
+        # model,    batch size,      epoch
+        ('wifiTAD', 16, 55)
     ]
 
     dataset_str_list = [
-        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270'),
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30')
+
+        ('WWADLDatasetSingle', 'wifi_30_3_0', '34_2048_90_0'),
+        # ('WWADLDatasetSingle', 'wifi_30_3_1', '34_2048_90_0'),
+        # ('WWADLDatasetSingle', 'wifi_30_3_2', '34_2048_90_0'),
+        # ('WWADLDatasetSingle', 'imu_30_3_gl', '34_2048_6_0'),
+        # # ('WWADLDatasetSingle', 'imu_30_3_lh', '34_2048_6_0'),
+        # ('WWADLDatasetSingle', 'imu_30_3_rh', '34_2048_6_0'),
+        # # ('WWADLDatasetSingle', 'imu_30_3_lp', '34_2048_6_0'),
+        # ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
+        #
+        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
+
+        #
+        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_1'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_1'),
+
+        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_1'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_1'),
+        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
     ]
 
     for dataset_str in dataset_str_list:
@@ -39,10 +59,12 @@ if __name__ == '__main__':
 
             config["model"]["model_set"] = model_set
 
+            config["training"]["lr_rate"] = 2e-05
+
             test_gpu = 0
 
             # TAG ===============================================================================================
-            tag = f'model_size'
+            tag = f'device'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
@@ -53,8 +75,6 @@ if __name__ == '__main__':
 
             config["training"]['num_epoch'] = epoch
             config["training"]['train_batch_size'] = batch_size
-
-
 
             write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
 
@@ -71,10 +91,7 @@ if __name__ == '__main__':
             write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
 
             # TEST ==============================================================================================
-
-            run.config_path = '/root/shared-nvme/code_result/result/25_01-08/model_size/WWADLDatasetSingle_imu_30_3_34_2048_30/setting.json'
             os.system(
                 f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
-                f"{run.main_path} --config_path {run.config_path} "
-                f"> {run.log_path}"
+                f"{run.main_path} --config_path {run.config_path}"
             )

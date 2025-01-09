@@ -4,6 +4,7 @@ import json
 import torch
 import torch.nn as nn
 from tqdm import tqdm  # 导入 tqdm 进度条模块
+import numpy as np
 from dataset.wwadl_test import WWADLDatasetTestSingle
 from strategy.evaluation.softnms import softnms_v2
 from strategy.evaluation.eval_detection import ANETdetection
@@ -33,6 +34,8 @@ class Tester(object):
 
         if pt_file_name is None:
             pt_file_name = self.get_latest_checkpoint()
+
+        print(pt_file_name)
 
         self.model.load_state_dict(torch.load(os.path.join(self.checkpoint_path, pt_file_name)))  # 加载模型权重
 
@@ -146,7 +149,7 @@ class Tester(object):
         Evaluate model performance and save a report to self.checkpoint_path directory.
         """
         # Define tIoU thresholds
-        tious = [0.3, 0.4, 0.5, 0.6, 0.7]
+        tious = np.linspace(0.5, 0.95, 10)
 
         # Initialize ANETdetection
         anet_detection = ANETdetection(
@@ -192,6 +195,12 @@ if __name__ == '__main__':
     model_config = wifiTAD_config(config['model']['model_set'])
     model = wifiTAD(model_config)
 
-    dataset = WWADLDatasetTestSingle(dataset_dir='/root/shared-nvme/dataset/imu_30_3')
-    test = Tester(config,dataset, model)
-    test.testing()
+    dataset = WWADLDatasetTestSingle(dataset_dir='/root/shared-nvme/dataset/wifi_30_3')
+
+    for file_name, data_iterator in dataset.dataset():
+        for clip, segment in data_iterator:
+            print(clip.shape)
+            break
+
+    # test = Tester(config,dataset, model)
+    # test.testing()

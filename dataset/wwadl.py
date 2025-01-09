@@ -3,11 +3,13 @@ import json
 import os
 import h5py
 import torch
+import numpy as np
+from tqdm import tqdm
 from torch.utils.data import Dataset
 
 
 class WWADLDatasetSingle(Dataset):
-    def __init__(self, dataset_dir, split="train"):
+    def __init__(self, dataset_dir, split="train", normalize=True):
         """
         初始化 WWADL 数据集。
         :param dataset_dir: 数据集所在目录路径。
@@ -16,10 +18,13 @@ class WWADLDatasetSingle(Dataset):
         assert split in ["train", "test"], "split must be 'train' or 'test'"
         self.dataset_dir = dataset_dir
         self.split = split
+        self.normalize = normalize
 
         self.data_path = os.path.join(dataset_dir, f"{split}_data.h5")
         self.label_path = os.path.join(dataset_dir, f"{split}_label.json")
         self.info_path = os.path.join(dataset_dir, f"info.json")
+        self.stats_path = os.path.join(dataset_dir, "global_stats.json")  # 保存均值和方差的路径
+
 
         with open(self.info_path, 'r') as json_file:
             self.info = json.load(json_file)
@@ -31,8 +36,60 @@ class WWADLDatasetSingle(Dataset):
         with open(self.label_path, 'r') as json_file:
             self.labels = json.load(json_file)[self.modality]
 
-        # self.h5_file = h5py.File(self.data_path, 'r')  # 打开文件
-        # self.data = self.h5_file[self.modality]
+        # 加载或计算全局均值和方差
+        # 加载或计算全局均值和方差
+        if self.normalize:
+            if os.path.exists(self.stats_path):
+                self.global_mean, self.global_std = self.load_global_stats()  # 文件存在则加载
+            elif split == "train":
+                self.global_mean, self.global_std = self.compute_global_mean_std()  # 训练集计算
+                self.save_global_stats()  # 保存均值和方差
+            else:
+                raise FileNotFoundError(f"{self.stats_path} not found. Please generate it using the training dataset.")
+
+    def compute_global_mean_std(self):
+        """
+        计算全局均值和方差。
+        """
+        print("Calculating global mean and std...")
+        mean_list, std_list = [], []
+        with h5py.File(self.data_path, 'r') as h5_file:
+            data = h5_file[self.modality]
+            # 使用 tqdm 显示进度条
+            for i in tqdm(range(data.shape[0]), desc="Processing samples"):
+                sample = data[i]
+                if self.modality == 'imu':
+                    sample = sample.transpose(1, 2, 0).reshape(-1, sample.shape[-1])  # [30, 2048]
+                if self.modality == 'wifi':
+                    sample = sample.transpose(1, 2, 3, 0).reshape(-1, sample.shape[-1])  # [270, 2048]
+                sample = torch.tensor(sample, dtype=torch.float32)
+                mean_list.append(sample.mean(dim=0).numpy())
+                std_list.append(sample.std(dim=0).numpy())
+
+        global_mean = np.mean(mean_list, axis=0)
+        global_std = np.mean(std_list, axis=0)
+        return global_mean, global_std
+
+    def save_global_stats(self):
+        """
+        保存全局均值和方差到文件。
+        """
+        stats = {
+            "global_mean": self.global_mean.tolist(),
+            "global_std": self.global_std.tolist()
+        }
+        with open(self.stats_path, 'w') as f:
+            json.dump(stats, f)
+        print(f"Global stats saved to {self.stats_path}")
+
+    def load_global_stats(self):
+        """
+        从文件加载全局均值和方差。
+        """
+        with open(self.stats_path, 'r') as f:
+            stats = json.load(f)
+        print(f"Loaded global stats from {self.stats_path}")
+        return np.array(stats["global_mean"]), np.array(stats["global_std"])
 
     def shape(self):
         with h5py.File(self.data_path, 'r') as h5_file:
@@ -59,6 +116,11 @@ class WWADLDatasetSingle(Dataset):
         # 转换为 Tensor
         sample = torch.tensor(sample, dtype=torch.float32)
 
+        # 全局归一化
+        if self.normalize:
+            sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)) / \
+                     (torch.tensor(self.global_std, dtype=torch.float32) + 1e-6)
+
         if self.modality == 'imu':
             sample = sample.permute(1, 2, 0)  # [5, 6, 2048]
             sample = sample.reshape(-1, sample.shape[-1])  # [5*6=30, 2048]
@@ -66,6 +128,12 @@ class WWADLDatasetSingle(Dataset):
             # [2048, 3, 3, 30]
             sample = sample.permute(1, 2, 3, 0)  # [3, 3, 30, 2048]
             sample = sample.reshape(-1, sample.shape[-1])  # [3*3*30, 2048]
+
+        # 替换 NaN 和 Inf
+        # sample = torch.nan_to_num(sample, nan=0.0, posinf=0.0, neginf=0.0)
+
+        if torch.isnan(sample).any() or torch.isinf(sample).any():
+            raise ValueError("Input contains NaN or Inf values.")
 
         label = torch.tensor(label, dtype=torch.float32)
 

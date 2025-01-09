@@ -24,6 +24,7 @@ class Unit1D(nn.Module):
                  padding='same',
                  activation_fn=F.relu,
                  use_bias=True):
+
         super(Unit1D, self).__init__()
         self.conv1d = nn.Conv1d(in_channels,
                                 output_channels,
