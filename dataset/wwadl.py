@@ -169,7 +169,6 @@ if __name__ == '__main__':
         batch_size=batch_size,
         shuffle=True,
         num_workers=4,
-        # worker_init_fn=worker_init_fn,
         collate_fn=detection_collate,
         pin_memory=True,
         drop_last=True

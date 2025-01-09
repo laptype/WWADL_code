@@ -2,7 +2,8 @@
 import torch
 from init_utils import init_dataset, init_model
 from torchinfo import summary
-from pipeline.trainer_ddp import Trainer
+# from pipeline.trainer_ddp import Trainer as Trainer_ddp
+from pipeline.trainer_dp import Trainer as Trainer_dp
 
 
 def count_gflops(model, input_size):
@@ -20,7 +21,7 @@ def train(config):
     # backbone_gflops = count_gflops(strategy.backbone, (64, 90, 1000))
     # print(f'Backbone GFLOPs: {backbone_gflops}')
 
-    trainer = Trainer(config, train_dataset, model)
+    trainer = Trainer_dp(config, train_dataset, model)
 
     trainer.training()
 

@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset
 from torch.utils.tensorboard import SummaryWriter
 from strategy.loss.loss import MultiSegmentLoss
-from utils.distributed_utils import init_distributed_mode, dist, cleanup, reduce_value
 import heapq  # 用于管理最小堆
 from dataset.wwadl import detection_collate
 
@@ -122,94 +121,71 @@ class Trainer(object):
                                                          self.lr_rate_adjust_factor)
 
     def _train_one_step(self, data, targets):
-
+        data = data.to(self.device)  # 确保输入数据在正确的设备上
         targets = [t.to(self.device) for t in targets]
         self.optimizer.zero_grad()
 
         output_dict = self.model(data)
-        loc_p = output_dict['loc'].clamp(min=0)
-        loss_l, loss_c = self.loss([loc_p, output_dict['conf'], output_dict["priors"]], targets)
+        # loc_p = output_dict['loc'].clamp(min=0)
+        loss_l, loss_c = self.loss([output_dict['loc'], output_dict['conf'], output_dict["priors"][0]], targets)
 
         loss_l = loss_l * self.lw * 100
         loss_c = loss_c * self.cw
 
         loss = loss_l + loss_c
 
+        # 反向传播
         loss.backward()
 
-        # 同步
-        # 同步总损失
-        reduced_loss = reduce_value(loss, average=True)  # 汇总所有进程的总损失
-        reduced_loss_l = reduce_value(loss_l, average=True)  # 汇总 loc 损失，可能是因为这个的原因？
-        reduced_loss_c = reduce_value(loss_c, average=True)  # 汇总 conf 损失
-
+        # 优化器更新权重
         self.optimizer.step()
 
-        return reduced_loss.item(), reduced_loss_l.item(), reduced_loss_c.item()
+        # 无需分布式同步，直接返回损失
+        return loss.item(), loss_l.item(), loss_c.item()
 
     def training(self):
         # 给不同的进程分配不同的、固定的随机数种子
-        self.set_seed(2024+self.rank)
-        init_distributed_mode(args=self)
-
-        if self.rank == 0:
-            print(f'world_size: {self.world_size}, gpu: {self.gpu}')
+        self.set_seed(2024)
 
         device = torch.device(self.device)
 
-        # 给每个rank对应的进程分配训练的样本索引 -------------------------------------------------------------
-        train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
-
-        # 将样本索引每batch_size个元素组成一个list ----------------------------------------------------------
-        # 每张卡上的 batch_size = train_loader.batch_size = self.batch_size // world_size
-        train_batch_sampler = torch.utils.data.BatchSampler(
-            train_sampler, self.batch_size, drop_last=True
-        )
-        nw = min([os.cpu_count(), self.batch_size if self.batch_size > 1 else 0, 8])  # number of workers
-        if self.rank == 0:
-            print('Using {} dataloader workers every process'.format(nw))
-
         # dataset loader -------------------------------------------------------------------------------
+        nw = min([os.cpu_count(), self.batch_size if self.batch_size > 1 else 0, 8])  # number of workers
+        print('Using {} dataloader workers every process'.format(nw))
+
         train_loader = DataLoader(
             self.train_dataset,
-            batch_sampler=train_batch_sampler,  # 使用 BatchSampler 管理采样
+            batch_size=self.batch_size,  # DataParallel 不需要使用分布式采样
             pin_memory=True,
             num_workers=nw,  # 动态设置 workers
             collate_fn=detection_collate,  # 自定义 collate_fn
-            worker_init_fn=worker_init_fn,  # 初始化每个 worker 的随机种子,
+            worker_init_fn=worker_init_fn,  # 初始化每个 worker 的随机种子
+            drop_last = True
         )
+
         # load model ------------------------------------------------------------------------------------
+
+
+
+        # 转为DataParallel模型 ---------------------------------------------------------------------------
+        if torch.cuda.device_count() > 1:
+            print(f"Using {torch.cuda.device_count()} GPUs for training")
+            self.model = torch.nn.DataParallel(self.model, device_ids=list(range(torch.cuda.device_count())))
+        else:
+            print("Using a single GPU for training")
+
         self.model = self.model.to(device=device)
-
-        # init model weight -----------------------------------------------------------------------------
-        if self.rank == 0:
-            torch.save(self.model.state_dict(), os.path.join(self.check_point_path, "initial_weights.pt"))
-
-        # wait dist
-        dist.barrier()
-
-        self.model.load_state_dict(torch.load(os.path.join(self.check_point_path, "initial_weights.pt"),
-                                                 map_location=device))
-
-        # 转为DDP模型 --------------------------------------------------------------------------------------
-        self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[self.gpu], find_unused_parameters=True)
 
         self._init_optimizer()
 
         mini_train_loss = float('inf')
-        saver = None
-        if self.rank == 0:
-            saver = BestModelSaver(self.check_point_path, max_models=1)  # 初始化最佳模型管理
+        saver = BestModelSaver(self.check_point_path, max_models=1)  # 初始化最佳模型管理
 
         for epoch in range(self.num_epoch):
-            train_sampler.set_epoch(epoch+self.rank) # 打乱分配的数据
-            np.random.seed(epoch+self.rank)
+            np.random.seed(epoch)  # 设置随机种子
             self.model.train()
 
-            if self.rank == 0:
-                tbar = tqdm(train_loader)
-            else:
-                tbar = train_loader
+            tbar = tqdm(train_loader)
 
             iteration = 0
             loss_loc_val = 0
@@ -224,12 +200,11 @@ class Trainer(object):
                 loss_conf_val += loss_c
                 cost_val += loss
 
-                if self.rank ==0:
-                    tbar.set_description('Epoch: %d: ' % (epoch + 1))
-                    tbar.set_postfix(train_loss=loss)
+                tbar.set_description('Epoch: %d: ' % (epoch + 1))
+                tbar.set_postfix(train_loss=loss)
 
-            if self.rank==0:
-                tbar.close()
+
+            tbar.close()
 
             loss_loc_val /= (iteration + 1)
             loss_conf_val /= (iteration + 1)
@@ -237,33 +212,23 @@ class Trainer(object):
             plog = 'Epoch-{} Loss: Total - {:.5f}, loc - {:.5f}, conf - {:.5f}' \
                 .format(epoch, cost_val, loss_loc_val, loss_conf_val)
 
-            if self.rank==0:
-                logging.info(plog)
-
-            # 等待所有进程计算完毕
-            torch.cuda.synchronize(device)
+            logging.info(plog)
 
             self.scheduler.step()
 
-            if self.rank == 0:
-                # 保存当前模型
-                saver.save_model(self.model.module.state_dict(), f"{self.model_info}-epoch-{epoch}", cost_val)
+            # 保存当前模型
+            saver.save_model(self.model.module.state_dict(), f"{self.model_info}-epoch-{epoch}", cost_val)
 
-                self.writer.add_scalar("Train Loss", cost_val, epoch)
-                self.writer.add_scalar("loss_loc_val Loss", loss_loc_val, epoch)
-                self.writer.add_scalar("loss_conf_val Loss", loss_conf_val, epoch)
+            self.writer.add_scalar("Train Loss", cost_val, epoch)
+            self.writer.add_scalar("loss_loc_val Loss", loss_loc_val, epoch)
+            self.writer.add_scalar("loss_conf_val Loss", loss_conf_val, epoch)
 
-        if self.rank == 0:
-            torch.save(self.model.module.state_dict(),
-                       os.path.join(self.check_point_path, '%s-final' % (self.model_info)))
+        torch.save(self.model.module.state_dict(),
+                   os.path.join(self.check_point_path, '%s-final' % (self.model_info)))
 
-        if self.rank == 0:
-            if os.path.exists(os.path.join(self.check_point_path, "initial_weights.pt")) is True:
-                os.remove(os.path.join(self.check_point_path, "initial_weights.pt"))
+        if os.path.exists(os.path.join(self.check_point_path, "initial_weights.pt")) is True:
+            os.remove(os.path.join(self.check_point_path, "initial_weights.pt"))
 
-
-        cleanup()
-        print('dist.destroy_process_group()')
 
     def set_seed(self, seed):
         torch.manual_seed(seed)

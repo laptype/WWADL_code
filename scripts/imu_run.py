@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     model_str_list = [
         # model,    batch size,      epoch
-        ('wifiTAD', 16, 55)
+        ('wifiTAD', 32, 55)
     ]
 
     dataset_str_list = [
@@ -29,14 +29,14 @@ if __name__ == '__main__':
         ('WWADLDatasetSingle', 'wifi_30_3_0', '34_2048_90_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3_1', '34_2048_90_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3_2', '34_2048_90_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3_gl', '34_2048_6_0'),
+        ('WWADLDatasetSingle', 'imu_30_3_gl', '34_2048_6_0'),
         # # ('WWADLDatasetSingle', 'imu_30_3_lh', '34_2048_6_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3_rh', '34_2048_6_0'),
+        ('WWADLDatasetSingle', 'imu_30_3_rh', '34_2048_6_0'),
         # # ('WWADLDatasetSingle', 'imu_30_3_lp', '34_2048_6_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
+        ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
         #
-        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
+        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
+        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
 
         #
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_1'),
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
             config['datetime'] = get_time()
             config["training"]["DDP"]["enable"] = True
-            config["training"]["DDP"]["devices"] = [0]
+            config["training"]["DDP"]["devices"] = [0, 1]
 
             config["model"]["model_set"] = model_set
 
@@ -81,9 +81,13 @@ if __name__ == '__main__':
             # TRAIN =============================================================================================
             run = Run_config(config, 'train')
 
+            # os.system(
+            #     f"CUDA_VISIBLE_DEVICES={run.ddp_devices} {run.python_path} -m torch.distributed.launch --nproc_per_node {run.nproc_per_node} "
+            #     f"--master_port='29501' --use_env "
+            #     f"{run.main_path} --is_train true --config_path {run.config_path}"
+            # )
             os.system(
-                f"CUDA_VISIBLE_DEVICES={run.ddp_devices} {run.python_path} -m torch.distributed.launch --nproc_per_node {run.nproc_per_node} "
-                f"--master_port='29501' --use_env "
+                f"CUDA_VISIBLE_DEVICES={run.ddp_devices} {run.python_path} "
                 f"{run.main_path} --is_train true --config_path {run.config_path}"
             )
 

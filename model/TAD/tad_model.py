@@ -59,7 +59,19 @@ class Pyramid_Detection(nn.Module):
                 torch.Tensor([[(c + 0.5) / t] for c in range(t)]).view(-1, 1)
             )
             t = t // 2
-        
+        # 将 priors 转为 nn.Parameter 或固定到设备上
+        # self.register_buffer("priors", self._generate_priors(priors, layer_num))
+
+    def _generate_priors(self, priors, layer_num):
+        t = priors
+        priors_list = []
+        for i in range(layer_num):
+            priors_list.append(
+                torch.Tensor([[(c + 0.5) / t] for c in range(t)]).view(-1, 1)
+            )
+            t = t // 2
+        return torch.cat(priors_list, 0)
+
     def forward(self, embedd):
         
         deep_feat = embedd
@@ -91,6 +103,7 @@ class Pyramid_Detection(nn.Module):
 
         loc = torch.cat([o.view(batch_num, -1, 2) for o in locs], 1)
         conf = torch.cat([o.view(batch_num, -1, self.num_classes) for o in confs], 1)
+        # priors = self.priors.unsqueeze(0).expand(batch_num, -1, -1).to(loc.device)
         priors = torch.cat(self.priors, 0).to(loc.device).unsqueeze(0)
         return loc, conf, priors
 
@@ -154,5 +167,5 @@ class wifitad(nn.Module):
         return {
             'loc': loc,
             'conf': conf,
-            'priors': priors[0]
+            'priors': priors
         }
