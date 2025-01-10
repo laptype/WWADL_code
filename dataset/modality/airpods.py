@@ -8,8 +8,6 @@ class WWADL_airpods(WWADLBase):
         self.duration = 0
         self.load_data(file_path)
 
-
-
     def load_data(self, file_path):
         data = load_h5(file_path)
 

@@ -32,7 +32,6 @@ for test_model_path in test_model_list:
 
     print(run.config_path)
 
-
     os.system(
         f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
         f"{run.main_path} --config_path {run.config_path} "
