@@ -36,7 +36,7 @@ if __name__ == '__main__':
         # # ('WWADLDatasetSingle', 'imu_30_3_lp', '34_2048_6_0'),
         # ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
         #
-        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_1'),
+        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
         # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
 
         #
@@ -65,7 +65,7 @@ if __name__ == '__main__':
             test_gpu = 1
 
             # TAG ===============================================================================================
-            tag = f'test2'
+            tag = f'testwifi'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
@@ -111,7 +111,3 @@ if __name__ == '__main__':
                 subprocess.run(test_command, shell=True)
             else:
                 print("Training process failed. Test process will not start.")
-            # os.system(
-            #     f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
-            #     f"{run.main_path} --config_path {run.config_path}"
-            # )

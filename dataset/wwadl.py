@@ -135,9 +135,9 @@ class WWADLDatasetSingle(Dataset):
             sample = sample.reshape(-1, sample.shape[-1])  # [3*3*30, 2048]
 
         # 全局归一化：使用序列维度的均值和标准差
-        # if self.normalize:
-        #     sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
-        #              (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
+        if self.normalize:
+            sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
+                     (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
 
         # 替换 NaN 和 Inf
         # sample = torch.nan_to_num(sample, nan=0.0, posinf=0.0, neginf=0.0)
@@ -166,26 +166,58 @@ def detection_collate(batch):
     return torch.stack(clips, 0), targets
 
 if __name__ == '__main__':
-
+    import matplotlib.pyplot as plt
     # train_dataset = WWADLDatasetSingle('/data/WWADL/dataset/imu_30_3', split='train')
     train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/wifi_30_3', split='train')
 
-    from torch.utils.data import DataLoader
+    # from torch.utils.data import DataLoader
+    #
+    # # 定义 DataLoader
+    # batch_size = 32
+    # train_data_loader = DataLoader(
+    #     train_dataset,
+    #     batch_size=batch_size,
+    #     shuffle=True,
+    #     num_workers=4,
+    #     collate_fn=detection_collate,
+    #     pin_memory=True,
+    #     drop_last=True
+    # )
+    #
+    # for i, (data_batch, label_batch) in enumerate(train_data_loader):
+    #     print(f"Batch {i} data shape: {data_batch.shape}")
+    #     print(f"Batch {i} labels: {len(label_batch)}")
+    #     break
 
-    # 定义 DataLoader
-    batch_size = 32
-    train_data_loader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=4,
-        collate_fn=detection_collate,
-        pin_memory=True,
-        drop_last=True
-    )
 
-    for i, (data_batch, label_batch) in enumerate(train_data_loader):
-        print(f"Batch {i} data shape: {data_batch.shape}")
-        print(f"Batch {i} labels: {len(label_batch)}")
-        break
+    ''' 画图 '''
+    # 获取第一个样本
+    sample, label = train_dataset[0]
+
+    # 标准化数据: 使用全局均值和标准差进行标准化
+    sample_norm = (sample - torch.tensor(train_dataset.global_mean, dtype=torch.float32)[:, None]) / \
+                  (torch.tensor(train_dataset.global_std, dtype=torch.float32)[:, None] + 1e-6)
+
+    # 打印样本的形状
+    print("Original shape:", sample.shape)
+    print("Normalized shape:", sample_norm.shape)
+
+    # 创建一个 3x2 的子图，用于展示原始数据和标准化数据
+    fig, axes = plt.subplots(3, 2, figsize=(15, 10))  # 3行2列的子图
+
+    # 遍历三个通道，绘制原始数据和标准化后的数据
+    for i in range(3):
+        # 原始数据绘制在第1列
+        axes[i, 0].plot(sample[i, :], label="Original")
+        axes[i, 0].set_title(f"Original Channel {i + 1}")
+        axes[i, 0].axis('off')  # 关闭坐标轴显示
+
+        # 标准化后的数据绘制在第2列
+        axes[i, 1].plot(sample_norm[i, :], label="Normalized")
+        axes[i, 1].set_title(f"Normalized Channel {i + 1}")
+        axes[i, 1].axis('off')  # 关闭坐标轴显示
+
+    # 调整子图布局，避免重叠
+    plt.tight_layout()
+    plt.show()
 

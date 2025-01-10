@@ -30,6 +30,7 @@ class WWADLDatasetTestSingle():
 
     def __init__(self, config):
         dataset_dir = config['path']['dataset_path']
+        self.dataset_dir = dataset_dir
         dataset_root_path = config['path']['dataset_root_path']
         self.test_file_list = load_file_list(dataset_dir)
 
@@ -57,6 +58,22 @@ class WWADLDatasetTestSingle():
 
         self.eval_gt = os.path.join(dataset_dir, f'{self.modality}_annotations.json')
 
+        # 加载全局均值和方差
+        self.global_mean, self.global_std = self.load_global_stats()
+
+    def load_global_stats(self):
+        """
+        从文件加载全局均值和方差。
+        """
+        stats_path = os.path.join(self.dataset_dir, "global_stats.json")
+        if not os.path.exists(stats_path):
+            raise FileNotFoundError(f"Global stats file '{stats_path}' not found. Ensure it is generated during training.")
+
+        with open(stats_path, 'r') as f:
+            stats = json.load(f)
+        print(f"Loaded global stats from {stats_path}")
+        return np.array(stats["global_mean"]), np.array(stats["global_std"])
+
     def get_data(self, file_path):
         sample = self.modality_dataset(file_path)
         sample_count = len(sample.data)
@@ -72,6 +89,9 @@ class WWADLDatasetTestSingle():
         for offset in offsetlist:
             clip = sample.data[offset: offset + self.clip_length]  # 获取当前的 clip
 
+            # 替换 NaN 为 0
+            clip = np.nan_to_num(clip, nan=0.0, posinf=0.0, neginf=0.0)
+
             # 插值到 target_len 长度
             original_indices = np.linspace(0, self.clip_length - 1, self.clip_length)
             target_indices = np.linspace(0, self.clip_length - 1, self.target_len)
@@ -79,10 +99,20 @@ class WWADLDatasetTestSingle():
 
             clip = torch.from_numpy(clip)  # 转为 Tensor
 
-            clip = clip.permute(1, 2, 0)  # [5, 6, 1500]
-            clip = clip.reshape(-1, clip.shape[-1])  # [5*6=30, 1500]
+            if self.modality == 'imu':
+                clip = clip.permute(1, 2, 0)  # [5, 6, 1500]
+                clip = clip.reshape(-1, clip.shape[-1])  # [5*6=30, 1500]
+            if self.modality == 'wifi':
+                # [2048, 3, 3, 30]
+                clip = clip.permute(1, 2, 3, 0)  # [3, 3, 30, 2048]
+                clip = clip.reshape(-1, clip.shape[-1])  # [3*3*30, 2048]
 
             clip = clip.float()
+
+
+            # 归一化
+            clip = (clip - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
+                   (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
 
             yield clip, [offset, offset + self.clip_length]
 

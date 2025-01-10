@@ -59,7 +59,7 @@ class LSREF(nn.Module):
             window_min = window.min(dim=-1, keepdim=True)[0]
             
             # Calculate Euclidean distance between max and min values
-            euclidean_dist = torch.norm(window_max - window_min, p=2, dim=-1)
+            euclidean_dist = torch.norm(window_max - window_min, p=2, dim=-1) + 1e-6
             
             # Determine corresponding index in result tensor
             idx = i // step
