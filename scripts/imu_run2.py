@@ -27,13 +27,13 @@ if __name__ == '__main__':
 
     dataset_str_list = [
 
-        # ('WWADLDatasetSingle', 'wifi_30_3_0', '34_2048_90_0'),
-        # ('WWADLDatasetSingle', 'wifi_30_3_1', '34_2048_90_0'),
-        # ('WWADLDatasetSingle', 'wifi_30_3_2', '34_2048_90_0'),
+        ('WWADLDatasetSingle', 'wifi_30_3_0', '34_2048_90_0'),
+        ('WWADLDatasetSingle', 'wifi_30_3_1', '34_2048_90_0'),
+        ('WWADLDatasetSingle', 'wifi_30_3_2', '34_2048_90_0'),
         # ('WWADLDatasetSingle', 'imu_30_3_gl', '34_2048_6_0'),
-        # # ('WWADLDatasetSingle', 'imu_30_3_lh', '34_2048_6_0'),
+        ('WWADLDatasetSingle', 'imu_30_3_lh', '34_2048_6_0'),
         # ('WWADLDatasetSingle', 'imu_30_3_rh', '34_2048_6_0'),
-        # # ('WWADLDatasetSingle', 'imu_30_3_lp', '34_2048_6_0'),
+        ('WWADLDatasetSingle', 'imu_30_3_lp', '34_2048_6_0'),
         # ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
         #
         ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),

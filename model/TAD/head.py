@@ -59,14 +59,15 @@ class loc_head(nn.Module):
             ),
             nn.GroupNorm(32, out_channels),
             nn.ReLU(inplace=True),
-        Unit1D(
-                in_channels=out_channels,
-                output_channels=2,
-                kernel_shape=3,
-                stride=1,
-                use_bias=True,
-                activation_fn=None
-            ))
+            Unit1D(
+                    in_channels=out_channels,
+                    output_channels=2,
+                    kernel_shape=3,
+                    stride=1,
+                    use_bias=True,
+                    activation_fn=None
+            )
+        )
 
     def forward(self, x):
         x = self.loc(x)
@@ -87,16 +88,8 @@ class PredictionHead(nn.Module):
         loc_feat = self.loc_tower(x)
         conf_feat = self.conf_tower(x)
 
-        # 打印中间特征形状
-        # print(f"loc_feat shape: {loc_feat.shape}")
-        # print(f"conf_feat shape: {conf_feat.shape}")
-
         # 通过预测头
         loc_feat = self.loc_head(loc_feat)
         conf_feat = self.conf_head(conf_feat)
-
-        # 打印最终形状
-        # print(f"loc_feat after loc_head: {loc_feat.shape}")
-        # print(f"conf_feat after conf_head: {conf_feat.shape}")
 
         return loc_feat, conf_feat

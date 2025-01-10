@@ -30,11 +30,12 @@ if __name__ == '__main__':
         # ('WWADLDatasetSingle', 'wifi_30_3_0', '34_2048_90_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3_1', '34_2048_90_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3_2', '34_2048_90_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3_gl', '34_2048_6_0'),
-        # # ('WWADLDatasetSingle', 'imu_30_3_lh', '34_2048_6_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3_rh', '34_2048_6_0'),
-        # # ('WWADLDatasetSingle', 'imu_30_3_lp', '34_2048_6_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
+
+        ('WWADLDatasetSingle', 'imu_30_3_gl', '34_2048_6_0'),
+        # ('WWADLDatasetSingle', 'imu_30_3_lh', '34_2048_6_0'),
+        ('WWADLDatasetSingle', 'imu_30_3_rh', '34_2048_6_0'),
+        # ('WWADLDatasetSingle', 'imu_30_3_lp', '34_2048_6_0'),
+        ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
         #
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
         ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
@@ -65,7 +66,7 @@ if __name__ == '__main__':
             test_gpu = 0
 
             # TAG ===============================================================================================
-            tag = f'test2'
+            tag = f'testtest'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
