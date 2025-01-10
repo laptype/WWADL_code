@@ -126,8 +126,13 @@ class Trainer(object):
         self.optimizer.zero_grad()
 
         output_dict = self.model(data)
-        # loc_p = output_dict['loc'].clamp(min=0)
-        loss_l, loss_c = self.loss([output_dict['loc'], output_dict['conf'], output_dict["priors"][0]], targets)
+        assert not torch.isnan(output_dict['loc']).any(), "NaN detected in output_dict['loc']"
+        loc_p = output_dict['loc'].clamp(min=0)
+        loss_l, loss_c = self.loss([loc_p, output_dict['conf'], output_dict["priors"][0]], targets)
+
+        assert not torch.isnan(loss_l).any(), "NaN detected in loss_l"
+        assert not torch.isnan(loss_c).any(), "NaN detected in loss_c"
+
 
         loss_l = loss_l * self.lw * 100
         loss_c = loss_c * self.cw

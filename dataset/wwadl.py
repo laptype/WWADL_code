@@ -49,25 +49,35 @@ class WWADLDatasetSingle(Dataset):
 
     def compute_global_mean_std(self):
         """
-        计算全局均值和方差。
+        计算全局均值和方差，针对序列维度计算。
         """
         print("Calculating global mean and std...")
         mean_list, std_list = [], []
         with h5py.File(self.data_path, 'r') as h5_file:
             data = h5_file[self.modality]
-            # 使用 tqdm 显示进度条
             for i in tqdm(range(data.shape[0]), desc="Processing samples"):
                 sample = data[i]
-                if self.modality == 'imu':
-                    sample = sample.transpose(1, 2, 0).reshape(-1, sample.shape[-1])  # [30, 2048]
-                if self.modality == 'wifi':
-                    sample = sample.transpose(1, 2, 3, 0).reshape(-1, sample.shape[-1])  # [270, 2048]
-                sample = torch.tensor(sample, dtype=torch.float32)
-                mean_list.append(sample.mean(dim=0).numpy())
-                std_list.append(sample.std(dim=0).numpy())
 
-        global_mean = np.mean(mean_list, axis=0)
-        global_std = np.mean(std_list, axis=0)
+                if self.modality == 'imu':
+                    # IMU 数据：转换为 [30, 2048]
+
+                    sample = sample.transpose(1, 2, 0).reshape(-1, sample.shape[0])  # [30, 2048]
+
+                if self.modality == 'wifi':
+                    # WiFi 数据：转换为 [270, 2048]
+                    sample = sample.transpose(1, 2, 3, 0).reshape(-1, sample.shape[0])  # [270, 2048]
+
+                # 转为 torch.Tensor
+                sample = torch.tensor(sample, dtype=torch.float32)
+
+                # 针对序列维度（即第 0 维）计算均值和方差
+                mean_list.append(sample.mean(dim=1).numpy())  # 每个样本的序列均值，形状为 [270] 或 [30]
+                std_list.append(sample.std(dim=1).numpy())  # 每个样本的序列标准差，形状为 [270] 或 [30]
+
+        # 对所有样本的均值和标准差进行平均
+        global_mean = np.mean(mean_list, axis=0)  # 最终均值，形状为 [270] 或 [30]
+        global_std = np.mean(std_list, axis=0)  # 最终标准差，形状为 [270] 或 [30]
+
         return global_mean, global_std
 
     def save_global_stats(self):
@@ -116,11 +126,6 @@ class WWADLDatasetSingle(Dataset):
         # 转换为 Tensor
         sample = torch.tensor(sample, dtype=torch.float32)
 
-        # 全局归一化
-        if self.normalize:
-            sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)) / \
-                     (torch.tensor(self.global_std, dtype=torch.float32) + 1e-6)
-
         if self.modality == 'imu':
             sample = sample.permute(1, 2, 0)  # [5, 6, 2048]
             sample = sample.reshape(-1, sample.shape[-1])  # [5*6=30, 2048]
@@ -128,6 +133,11 @@ class WWADLDatasetSingle(Dataset):
             # [2048, 3, 3, 30]
             sample = sample.permute(1, 2, 3, 0)  # [3, 3, 30, 2048]
             sample = sample.reshape(-1, sample.shape[-1])  # [3*3*30, 2048]
+
+        # 全局归一化：使用序列维度的均值和标准差
+        # if self.normalize:
+        #     sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
+        #              (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
 
         # 替换 NaN 和 Inf
         # sample = torch.nan_to_num(sample, nan=0.0, posinf=0.0, neginf=0.0)

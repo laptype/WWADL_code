@@ -71,11 +71,12 @@ class Pyramid_Detection(nn.Module):
         return torch.cat(priors_list, 0)
 
     def forward(self, embedd):
-        
+        assert not torch.isnan(embedd).any(), "NaN detected in input embedd"
         deep_feat = embedd
         global_feat = embedd.detach()
         for i in range(len(self.skip_tsse)):
             deep_feat = self.skip_tsse[i](deep_feat)
+            assert not torch.isnan(deep_feat).any(), f"NaN detected in deep_feat after skip_tsse layer {i}"
         
         
         batch_num = deep_feat.size(0)
@@ -83,12 +84,17 @@ class Pyramid_Detection(nn.Module):
         locs = []
         confs = []
         for i in range(self.layer_num):
+            assert not torch.isnan(deep_feat).any(), f"NaN detected in deep_feat before PyLSRE at layer {i}"
             deep_feat = self.PyTSSE[i](deep_feat)
+            assert not torch.isnan(deep_feat).any(), f"NaN detected in deep_feat after PyLSRE at layer {i}"
             out = self.PyLSRE[i](deep_feat, global_feat)
+            assert not torch.isnan(out).any(), f"NaN detected in out at layer {i} after PyLSRE"
             out_feats.append(out)
         
         for i, feat in enumerate(out_feats):
+            assert not torch.isnan(feat).any(), "NaN detected in loc_logits before PredictionHead"
             loc_logits, conf_logits = self.PredictionHead(feat)
+            assert not torch.isnan(loc_logits).any(), f"NaN detected in loc_logits at layer {i}"
             locs.append(
                 self.loc_heads[i](loc_logits)
                     .view(batch_num, 2, -1)
@@ -111,6 +117,12 @@ class wifitad(nn.Module):
         super(wifitad, self).__init__()
         self.is_bn = config.is_bn
         self.embedding = Embedding(config.in_channels)
+
+        if self.is_bn:
+            # 添加 BatchNorm 层
+            self.batch_norm = nn.BatchNorm1d(config.in_channels)
+        else:
+            self.batch_norm = None
 
         self.pyramid_detection = Pyramid_Detection(
             skip_ds_layer=config.skip_ds_layer,
@@ -145,8 +157,8 @@ class wifitad(nn.Module):
         前向传播
         输入数据形状: [batch_size, num_channels, seq_length]
         """
-        # if self.is_bn:
-        #     x = self.batch_norm(x)  # 对输入数据进行归一化
+        if self.is_bn:
+            x = self.batch_norm(x)  # 对输入数据进行归一化
         x = self.embedding(x)
 
         loc, conf, priors = self.pyramid_detection(x)

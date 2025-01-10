@@ -1,6 +1,7 @@
 import sys
 import os
 import torch
+import subprocess
 
 # project_path = '/home/lanbo/WWADL/WWADL_code'
 # dataset_root_path = '/data/WWADL/dataset'
@@ -64,7 +65,7 @@ if __name__ == '__main__':
             test_gpu = 0
 
             # TAG ===============================================================================================
-            tag = f'test'
+            tag = f'test2'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
@@ -86,16 +87,27 @@ if __name__ == '__main__':
             #     f"--master_port='29501' --use_env "
             #     f"{run.main_path} --is_train true --config_path {run.config_path}"
             # )
-            os.system(
+            # TRAIN =============================================================================================
+            train_command = (
                 f"CUDA_VISIBLE_DEVICES={run.ddp_devices} {run.python_path} "
                 f"{run.main_path} --is_train true --config_path {run.config_path}"
             )
 
-            config['endtime'] = get_time()
-            write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
+            # 执行训练命令并等待其完成
+            train_process = subprocess.run(train_command, shell=True)
 
-            # TEST ==============================================================================================
-            os.system(
-                f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
-                f"{run.main_path} --config_path {run.config_path}"
-            )
+            # 检查训练命令是否正常结束
+            if train_process.returncode == 0:  # 正常结束返回 0
+                config['endtime'] = get_time()
+                write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
+
+                # TEST ==========================================================================================
+                test_command = (
+                    f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
+                    f"{run.main_path} --config_path {run.config_path}"
+                )
+
+                # 启动测试命令
+                subprocess.run(test_command, shell=True)
+            else:
+                print("Training process failed. Test process will not start.")

@@ -56,10 +56,6 @@ class WWADLDatasetTestSingle():
 
                 data = torch.tensor(data, dtype=torch.float32)
 
-                # 全局归一化
-                data = (data - torch.tensor(self.global_mean, dtype=torch.float32)) / \
-                       (torch.tensor(self.global_std, dtype=torch.float32) + 1e-6)
-
                 if self.modality == 'imu':
                     data = data.permute(1, 2, 0)
                     data = data.reshape(-1, data.shape[-1])  # [5*6=30, 2048]
@@ -72,8 +68,9 @@ class WWADLDatasetTestSingle():
                 if torch.isnan(data).any() or torch.isinf(data).any():
                     raise ValueError("Input contains NaN or Inf values.")
 
-
-
+                # 全局归一化
+                # data = (data - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
+                #        (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
 
                 yield data, segment
 
