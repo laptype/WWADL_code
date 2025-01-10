@@ -20,11 +20,18 @@ test_model_list = [
 for test_model_path in test_model_list:
     config = load_setting(os.path.join(test_model_path, 'setting.json'))
 
+    config['path']['dataset_root_path'] = '/root/shared-nvme/WWADL'
+
     run = Run_config(config, 'train')
 
     test_gpu = 0
 
+    config['testing']['pt_file_name'] = 'orgwifiTAD_34_2048_30_0-epoch-200.ckpt'
+
+    write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
+
     print(run.config_path)
+
 
     os.system(
         f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "

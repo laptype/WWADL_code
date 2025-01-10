@@ -57,10 +57,9 @@ class LSREF(nn.Module):
             # Calculate maximum and minimum values in the window
             window_max = window.max(dim=-1, keepdim=True)[0]
             window_min = window.min(dim=-1, keepdim=True)[0]
-
-            epsilon = 1e-6
+            
             # Calculate Euclidean distance between max and min values
-            euclidean_dist = torch.norm(window_max - window_min, p=2, dim=-1) + epsilon
+            euclidean_dist = torch.norm(window_max - window_min, p=2, dim=-1)
             
             # Determine corresponding index in result tensor
             idx = i // step
@@ -73,8 +72,7 @@ class LSREF(nn.Module):
 
         # print(f'global_feat.shape {global_feat.shape}, r: {r}')
         # print(f'feat.shape: {feat.shape}', f'result.shape: {result.shape}')
-        assert not torch.isnan(result).any(), "NaN detected in result in LSREF"
-        assert not torch.isnan(feat).any(), "NaN detected in feat in LSREF"
+
         new_feat = self.crs(feat, result)
         return new_feat
 

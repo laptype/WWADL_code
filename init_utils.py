@@ -23,7 +23,7 @@ def init_dataset(config: dict):
 
 def init_test_dataset(config: dict):
     if config['dataset']['dataset_name'] == 'WWADLDatasetSingle':
-        dataset = WWADLDatasetTestSingle(config['path']['dataset_path'])
+        dataset = WWADLDatasetTestSingle(config)
     else:
         raise ValueError(f"Unsupported dataset name: {config['dataset']['dataset_name']}. "
                          "Please check the configuration.")

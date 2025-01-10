@@ -77,7 +77,7 @@ class Tester(object):
                 with torch.no_grad():  # 禁用梯度计算
                     output_dict = self.model(clip)  # 模型推理
 
-                loc, conf, priors = output_dict['loc'][0], output_dict['conf'][0], output_dict['priors'][0]
+                loc, conf, priors = output_dict['loc'][0], output_dict['conf'][0], output_dict['priors']
 
                 decoded_segments = torch.cat(
                     [priors[:, :1] * self.clip_length - loc[:, :1],  # 左边界
