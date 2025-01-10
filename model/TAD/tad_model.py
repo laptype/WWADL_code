@@ -120,7 +120,7 @@ class wifitad(nn.Module):
 
         if self.is_bn:
             # 添加 BatchNorm 层
-            self.batch_norm = nn.BatchNorm1d(config.in_channels)
+            self.batch_norm = nn.LayerNorm(config.input_length)
         else:
             self.batch_norm = None
 
@@ -135,6 +135,8 @@ class wifitad(nn.Module):
 
     @staticmethod
     def weight_init(m):
+        """ 初始化权重方法，使用 Xavier 和 He 初始化 """
+
         def glorot_uniform_(tensor):
             fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(tensor)
             scale = 1.0
@@ -142,13 +144,32 @@ class wifitad(nn.Module):
             limit = np.sqrt(3.0 * scale)
             return nn.init._no_grad_uniform_(tensor, -limit, limit)
 
-        if isinstance(m, nn.Conv1d) or isinstance(m, nn.Conv2d) or isinstance(m, nn.Conv3d) \
-                or isinstance(m, nn.ConvTranspose3d):
+        def he_uniform_(tensor):
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
+            gain = nn.init.calculate_gain('relu')
+            std = gain / np.sqrt(fan_in)
+            return nn.init._no_grad_normal_(tensor, mean=0.0, std=std)
+
+        # 针对卷积层和线性层，使用不同的初始化方法
+        if isinstance(m, nn.Conv1d) or isinstance(m, nn.Conv2d) or isinstance(m, nn.Conv3d):
+            # 使用 He 初始化方法
+            he_uniform_(m.weight)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+
+        elif isinstance(m, nn.Linear):
+            # 使用 Xavier 初始化方法
             glorot_uniform_(m.weight)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
 
+        elif isinstance(m, nn.LayerNorm):
+            # LayerNorm 初始化，权重为 1，偏置为 0
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
+
     def reset_params(self):
+        """ 重置所有模型层的权重 """
         for _, m in enumerate(self.modules()):
             self.weight_init(m)
     

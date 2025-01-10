@@ -125,8 +125,29 @@ class Trainer(object):
         targets = [t.to(self.device) for t in targets]
         self.optimizer.zero_grad()
 
-        output_dict = self.model(data)
-        assert not torch.isnan(output_dict['loc']).any(), "NaN detected in output_dict['loc']"
+        try:
+            output_dict = self.model(data)
+            assert not torch.isnan(output_dict['loc']).any(), "NaN detected in output_dict['loc']"
+        except AssertionError as e:
+            print("Error occurred during training, saving data and model parameters for debugging...")
+
+            # 创建保存路径
+            error_save_path = os.path.join(self.check_point_path, "debug")
+            os.makedirs(error_save_path, exist_ok=True)
+
+            # 保存导致问题的输入数据
+            data_save_path = os.path.join(error_save_path, "error_data.pt")
+            torch.save(data, data_save_path)
+            print(f"Input data saved to: {data_save_path}")
+
+            # 保存模型参数
+            model_save_path = os.path.join(error_save_path, "error_model.pth")
+            torch.save(self.model.state_dict(), model_save_path)
+            print(f"Model parameters saved to: {model_save_path}")
+
+            # 再次抛出异常以中断训练
+            raise e
+
         loc_p = output_dict['loc'].clamp(min=0)
         loss_l, loss_c = self.loss([loc_p, output_dict['conf'], output_dict["priors"][0]], targets)
 

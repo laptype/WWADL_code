@@ -12,6 +12,7 @@ class TriangularCausalMask():
     @property
     def mask(self):
         return self._mask
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -33,18 +34,19 @@ class FullAttention(nn.Module):
         scale = self.scale or 1./sqrt(E)
 
         scores = torch.einsum("blhe,bshe->bhls", queries, keys)
+        assert not torch.isnan(scores).any(), "NaN detected in scores after einsum"
+
         if self.mask_flag:
             if attn_mask is None:
                 attn_mask = TriangularCausalMask(B, L, device=queries.device)
 
             scores.masked_fill_(attn_mask.mask, -np.inf)
 
+        scores = torch.clamp(scores, min=-1e6, max=1e6)
 
-        # if plot_scores:
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         V = torch.einsum("bhls,bshd->blhd", A, values)
-        # self.plot_attention_scores(V, "a5")
-        
+
 
         if self.output_attention:
             return (V.contiguous(), A)
@@ -84,12 +86,16 @@ class CrossAttention(nn.Module):
         scale = self.scale or 1./sqrt(E)
 
         scores = torch.einsum("blhe,bshe->bhls", queries, keys)
+        assert not torch.isnan(scores).any(), "NaN detected in scores after einsum"
+        assert not torch.isinf(scores).any(), "Inf detected in scores after einsum"
+        scores = torch.clamp(scores, min=-1e3, max=1e3)
         scores = torch.pow(scores, 3)
         if self.mask_flag:
             if attn_mask is None:
                 attn_mask = TriangularCausalMask(B, L, device=queries.device)
 
             scores.masked_fill_(attn_mask.mask, -np.inf)
+        scores = scores - scores.max(dim=-1, keepdim=True).values  # Normalize for stability
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         V = torch.einsum("bhls,bshd->blhd", A, values)
         
@@ -345,7 +351,15 @@ class FullAttention_new(nn.Module):
         # print(f"scores shape: {scores.shape}")  # 可能是 [B, H, L, S]
         # print(f"scores2 shape: {scores2.shape}")  # 可能是 [B, H, L, D]
 
+        # Gaussian attention scores
+        scores = torch.clamp(scores, min=-1e3, max=1e3)
+        scores2 = torch.clamp(scores2, min=-1e3, max=1e3)
+
         scores_gaussian = torch.tanh(scale*scores)*torch.sigmoid(scale * scores2)
+
+        # Attention weights and values
+        scores_gaussian = scores_gaussian - scores_gaussian.max(dim=-1, keepdim=True).values
+
         A = self.dropout(torch.softmax(scores_gaussian, dim=-1))
         V = torch.einsum("bhls,bshd->blhd", A, values)
         

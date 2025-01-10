@@ -35,8 +35,6 @@ class Tester(object):
         if pt_file_name is None:
             pt_file_name = self.get_latest_checkpoint()
 
-        print(pt_file_name)
-
         self.model.load_state_dict(torch.load(os.path.join(self.checkpoint_path, pt_file_name)))  # 加载模型权重
 
         self.pt_file_name = pt_file_name
@@ -79,7 +77,7 @@ class Tester(object):
                 with torch.no_grad():  # 禁用梯度计算
                     output_dict = self.model(clip)  # 模型推理
 
-                loc, conf, priors = output_dict['loc'][0], output_dict['conf'][0], output_dict['priors']
+                loc, conf, priors = output_dict['loc'][0], output_dict['conf'][0], output_dict['priors'][0]
 
                 decoded_segments = torch.cat(
                     [priors[:, :1] * self.clip_length - loc[:, :1],  # 左边界
@@ -195,12 +193,6 @@ if __name__ == '__main__':
     model_config = wifiTAD_config(config['model']['model_set'])
     model = wifiTAD(model_config)
 
-    dataset = WWADLDatasetTestSingle(dataset_dir='/root/shared-nvme/dataset/wifi_30_3')
-
-    for file_name, data_iterator in dataset.dataset():
-        for clip, segment in data_iterator:
-            print(clip.shape)
-            break
-
-    # test = Tester(config,dataset, model)
-    # test.testing()
+    dataset = WWADLDatasetTestSingle(dataset_dir='/root/shared-nvme/dataset/imu_30_3')
+    test = Tester(config,dataset, model)
+    test.testing()

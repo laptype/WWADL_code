@@ -3,6 +3,7 @@
     "endtime": "2025_05-17_21:52:58",
     "path": {
         "dataset_path": "/root/shared-nvme/dataset/imu_30_3",
+        "dataset_root_path": "/root/shared-nvme/WWADL",
         "basic_path": {
             "project_path": "/root/shared-nvme/code/WWADL_code",
             "python_path": "/root/.conda/envs/test/bin/python",
@@ -19,7 +20,8 @@
         "dataset_name": "WWADLDatasetSingle",
         "dataset_info": {},
         "num_classes": 34,
-        "clip_length": 1500
+        "clip_length": 1500,
+        "data_length": 2048
     },
     "model": {
         "backbone_name": "wifiTAD",
@@ -32,7 +34,7 @@
         "num_epoch": 50,
         "opt_method": "adamw",
         "lr_rate": 4e-05,
-        "lr_rate_adjust_epoch": 50,
+        "lr_rate_adjust_epoch": 15,
         "lr_rate_adjust_factor": 0.5,
         "weight_decay": 0.001,
         "save_epoch": 501,
