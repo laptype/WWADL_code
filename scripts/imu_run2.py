@@ -1,6 +1,7 @@
 import sys
 import os
 import torch
+import subprocess
 
 # project_path = '/home/lanbo/WWADL/WWADL_code'
 # dataset_root_path = '/data/WWADL/dataset'
@@ -35,8 +36,8 @@ if __name__ == '__main__':
         # # ('WWADLDatasetSingle', 'imu_30_3_lp', '34_2048_6_0'),
         # ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
         #
-        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
+        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
 
         #
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_1'),
@@ -55,13 +56,13 @@ if __name__ == '__main__':
 
             config['datetime'] = get_time()
             config["training"]["DDP"]["enable"] = True
-            config["training"]["DDP"]["devices"] = [0]
+            config["training"]["DDP"]["devices"] = [1]
 
             config["model"]["model_set"] = model_set
 
             config["training"]["lr_rate"] = 4e-05
 
-            test_gpu = 0
+            test_gpu = 1
 
             # TAG ===============================================================================================
             tag = f'test'
@@ -95,7 +96,14 @@ if __name__ == '__main__':
             write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
 
             # TEST ==============================================================================================
-            os.system(
+            test_command = (
                 f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
                 f"{run.main_path} --config_path {run.config_path}"
             )
+
+            # 后台运行测试命令
+            subprocess.Popen(test_command, shell=True)
+            # os.system(
+            #     f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
+            #     f"{run.main_path} --config_path {run.config_path}"
+            # )

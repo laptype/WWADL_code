@@ -59,8 +59,6 @@ class Pyramid_Detection(nn.Module):
                 torch.Tensor([[(c + 0.5) / t] for c in range(t)]).view(-1, 1)
             )
             t = t // 2
-        # 将 priors 转为 nn.Parameter 或固定到设备上
-        # self.register_buffer("priors", self._generate_priors(priors, layer_num))
 
     def _generate_priors(self, priors, layer_num):
         t = priors
@@ -125,30 +123,21 @@ class wifitad(nn.Module):
 
     @staticmethod
     def weight_init(m):
-        """自定义权重初始化方法"""
         def glorot_uniform_(tensor):
             fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(tensor)
             scale = 1.0
-            scale /= max(1.0, (fan_in + fan_out) / 2.0)
+            scale /= max(1., (fan_in + fan_out) / 2.)
             limit = np.sqrt(3.0 * scale)
             return nn.init._no_grad_uniform_(tensor, -limit, limit)
 
-        if isinstance(m, (nn.Conv1d, nn.Conv2d, nn.Conv3d, nn.ConvTranspose3d)):
+        if isinstance(m, nn.Conv1d) or isinstance(m, nn.Conv2d) or isinstance(m, nn.Conv3d) \
+                or isinstance(m, nn.ConvTranspose3d):
             glorot_uniform_(m.weight)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.Linear):
-            nn.init.xavier_uniform_(m.weight)
-            if m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-        elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
-            nn.init.constant_(m.weight, 1)
-            nn.init.constant_(m.bias, 0)
 
     def reset_params(self):
         for _, m in enumerate(self.modules()):
-            if isinstance(m, (nn.LayerNorm, nn.Identity)):
-                continue  # 跳过不需要初始化的层
             self.weight_init(m)
     
     def forward(self, x):
@@ -167,5 +156,5 @@ class wifitad(nn.Module):
         return {
             'loc': loc,
             'conf': conf,
-            'priors': priors
+            'priors': priors # trainer ddp需要弄成priors[0]
         }

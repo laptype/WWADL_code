@@ -45,7 +45,7 @@ class Tester(object):
         # 获取目录中的所有文件
         all_files = os.listdir(self.checkpoint_path)
         # 正则表达式匹配文件名格式
-        pattern = re.compile(rf".*-epoch-(\d+)\.pt")
+        pattern = re.compile(r".*-epoch-(\d+)\.pt$")
 
         # 保存符合条件的文件和其对应的epoch
         valid_files = []

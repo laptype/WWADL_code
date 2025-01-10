@@ -67,6 +67,8 @@ if __name__ == '__main__':
     args = init_configs()
     config = load_setting(args.config_path)
     if args.is_train:
+        setup_logging(config['path']['log_path']['train'])
         train(config=config)
     else:
+        setup_logging(config['path']['log_path']['test'])
         test(config=config)

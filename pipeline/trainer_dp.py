@@ -165,8 +165,6 @@ class Trainer(object):
 
         # load model ------------------------------------------------------------------------------------
 
-
-
         # 转为DataParallel模型 ---------------------------------------------------------------------------
         if torch.cuda.device_count() > 1:
             print(f"Using {torch.cuda.device_count()} GPUs for training")
@@ -217,13 +215,13 @@ class Trainer(object):
             self.scheduler.step()
 
             # 保存当前模型
-            saver.save_model(self.model.module.state_dict(), f"{self.model_info}-epoch-{epoch}", cost_val)
+            saver.save_model(self.model.state_dict(), f"{self.model_info}-epoch-{epoch}", cost_val)
 
             self.writer.add_scalar("Train Loss", cost_val, epoch)
             self.writer.add_scalar("loss_loc_val Loss", loss_loc_val, epoch)
             self.writer.add_scalar("loss_conf_val Loss", loss_conf_val, epoch)
 
-        torch.save(self.model.module.state_dict(),
+        torch.save(self.model.state_dict(),
                    os.path.join(self.check_point_path, '%s-final' % (self.model_info)))
 
         if os.path.exists(os.path.join(self.check_point_path, "initial_weights.pt")) is True:
