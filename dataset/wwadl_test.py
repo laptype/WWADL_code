@@ -50,8 +50,8 @@ class WWADLDatasetTestSingle():
             'airpods': WWADL_airpods
         }
 
-        self.clip_length = self.info['segment_info']['test']['window_len']
-        self.stride = self.info['segment_info']['test']['window_step']
+        self.clip_length = self.info['segment_info']['train']['window_len']
+        self.stride = self.info['segment_info']['train']['window_step']
         self.target_len = self.info['segment_info']['target_len']
 
         self.modality_dataset = modality_dataset[self.modality]
