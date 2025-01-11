@@ -43,18 +43,42 @@ class Unit1D(nn.Module):
             return max(self._kernel_shape - (t % self._stride), 0)
 
     def forward(self, x):
+        if torch.isnan(x).any():
+            print("NaN detected in input to Unit1D")
+            raise ValueError("NaN detected in input to Unit1D")
+
         if self._padding == 'same':
             batch, channel, t = x.size()
             pad_t = self.compute_pad(t)
+            if pad_t < 0:
+                print(f"Negative padding detected: {pad_t}")
+                raise ValueError(f"Negative padding detected: {pad_t}")
             pad_t_f = pad_t // 2
             pad_t_b = pad_t - pad_t_f
             x = F.pad(x, [pad_t_f, pad_t_b])
+            if torch.isnan(x).any():
+                print("NaN detected after padding")
+                raise ValueError("NaN detected after padding")
+
+        weights = self.conv1d.weight
+        if torch.isnan(weights).any():
+            print("NaN detected in Conv1d weights")
+            raise ValueError("NaN detected in Conv1d weights")
+
         x = self.conv1d(x)
+        if torch.isnan(x).any():
+            print("NaN detected after Conv1d")
+            raise ValueError("NaN detected after Conv1d")
+
         if self._activation_fn is not None:
             x = self._activation_fn(x)
+            if torch.isnan(x).any():
+                print("NaN detected after activation function")
+                raise ValueError("NaN detected after activation function")
+
         return x
 
-    
+
 class ContraNorm(nn.Module):
     def __init__(self, dim, scale=0.1, dual_norm=False, pre_norm=False, temp=1.0, learnable=False, positive=False, identity=False):
         super().__init__()

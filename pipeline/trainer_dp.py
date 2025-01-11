@@ -5,6 +5,7 @@ import random
 import os.path
 import numpy as np
 from tqdm import tqdm
+from torch import nn as nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset
@@ -20,6 +21,39 @@ logger = logging.getLogger(__name__)
 # Worker 初始化函数
 def worker_init_fn(worker_id):
     np.random.seed(GLOBAL_SEED + worker_id)
+
+def register_hooks(model):
+    for name, module in model.named_modules():
+        # 仅对实际计算的模块注册钩子
+        if not isinstance(module, (nn.Sequential, nn.ModuleList, nn.Identity)):
+            module.register_forward_hook(forward_hook(name))
+
+def forward_hook(module_name):
+    """
+    钩子函数，用于检查输出是否合法。
+    """
+    def hook(module, input, output):
+        # 检查输出是否是 Tensor 类型
+        if isinstance(output, torch.Tensor):
+            if torch.isnan(output).any() or torch.isinf(output).any():
+                logging.error(f"NaN or Inf detected in module: {module_name}")
+                raise RuntimeError(f"NaN or Inf detected in module: {module_name}")
+        elif isinstance(output, (tuple, list)):
+            for i, out in enumerate(output):
+                if isinstance(out, torch.Tensor):
+                    if torch.isnan(out).any() or torch.isinf(out).any():
+                        logging.error(f"NaN or Inf detected in module: {module_name}, output[{i}]")
+                        raise RuntimeError(f"NaN or Inf detected in module: {module_name}, output[{i}]")
+        # 如果输出是 tuple 或 list，逐个检查其中的元素
+        elif isinstance(output, dict):
+            for key, out in output.items():
+                if isinstance(out, torch.Tensor):
+                    if torch.isnan(out).any() or torch.isinf(out).any():
+                        logging.error(f"NaN or Inf detected in module: {module_name}, key: {key}")
+                        raise RuntimeError(f"NaN or Inf detected in module: {module_name}, key: {key}")
+        else:
+            logging.warning(f"Output of module: {module_name} is not a Tensor or tuple/list of Tensors. Skipping check.")
+    return hook
 
 class BestModelSaver:
     def __init__(self, check_point_path, max_models=10):
@@ -125,11 +159,12 @@ class Trainer(object):
         targets = [t.to(self.device) for t in targets]
         self.optimizer.zero_grad()
 
+
         try:
             output_dict = self.model(data)
             assert not torch.isnan(output_dict['loc']).any(), "NaN detected in output_dict['loc']"
         except AssertionError as e:
-            print("Error occurred during training, saving data and model parameters for debugging...")
+            logging.info("Error occurred during training, saving data and model parameters for debugging...")
 
             # 创建保存路径
             error_save_path = os.path.join(self.check_point_path, "debug")
@@ -138,12 +173,12 @@ class Trainer(object):
             # 保存导致问题的输入数据
             data_save_path = os.path.join(error_save_path, "error_data.pt")
             torch.save(data, data_save_path)
-            print(f"Input data saved to: {data_save_path}")
+            logging.info(f"Input data saved to: {data_save_path}")
 
             # 保存模型参数
             model_save_path = os.path.join(error_save_path, "error_model.pth")
             torch.save(self.model.state_dict(), model_save_path)
-            print(f"Model parameters saved to: {model_save_path}")
+            logging.info(f"Model parameters saved to: {model_save_path}")
 
             # 再次抛出异常以中断训练
             raise e
@@ -154,7 +189,6 @@ class Trainer(object):
         assert not torch.isnan(loss_l).any(), "NaN detected in loss_l"
         assert not torch.isnan(loss_c).any(), "NaN detected in loss_c"
 
-
         loss_l = loss_l * self.lw * 100
         loss_c = loss_c * self.cw
 
@@ -162,6 +196,19 @@ class Trainer(object):
 
         # 反向传播
         loss.backward()
+
+        # for name, param in self.model.named_parameters():
+        #     if param.grad is not None:
+        #         if torch.isnan(param.grad).any() or torch.isinf(param.grad).any():
+        #             logging.info(f"Gradient anomaly detected in parameter: {name}")
+        #             logging.info(f"Gradient min: {param.grad.min()}, Gradient max: {param.grad.max()}")
+        #             # 清理异常梯度
+        #             param.grad = torch.nan_to_num(param.grad, nan=0.0, posinf=1.0, neginf=-1.0)
+        #             logging.info(f"Gradient for {name} has been cleaned.")
+
+        # **梯度裁剪**
+        # parameters_with_grad = [p for p in self.model.parameters() if p.grad is not None]
+        # torch.nn.utils.clip_grad_norm_(parameters_with_grad, max_norm=1.0)
 
         # 优化器更新权重
         self.optimizer.step()
@@ -172,7 +219,7 @@ class Trainer(object):
     def training(self):
         # 给不同的进程分配不同的、固定的随机数种子
         self.set_seed(2024)
-
+        register_hooks(self.model)
         device = torch.device(self.device)
 
         # dataset loader -------------------------------------------------------------------------------

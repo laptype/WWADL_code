@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from torch.nn import functional as F
+import torch.nn.init as init
 from model.mamba.backbones import MambaBackbone
 from model.mamba.necks import FPNIdentity, FPN1D
 from model.TAD.embedding import Embedding
 from model.mamba.loc_generators import PointGenerator
 from utils.basic_config import Config
-
+from model.mamba.head import PtTransformerClsHead, PtTransformerRegHead
 
 class WifiMamba_config(Config):
     """
@@ -20,7 +22,7 @@ class WifiMamba_config(Config):
         :param model_set: 模型配置字符串，格式为 num_classes_input_length_in_channels
         """
         # 解析配置字符串
-        num_classes, input_length, in_channels = model_set.split('_')
+        num_classes, input_length, in_channels, *_ = model_set.split('_')
         self.num_classes = int(num_classes)  # 分类数
         self.input_length = int(input_length)  # 输入序列长度
         self.in_channels = int(in_channels)  # 输入通道数
@@ -28,7 +30,7 @@ class WifiMamba_config(Config):
         # Mamba Backbone 配置
         self.n_embd = 512  # 嵌入维度
         self.n_embd_ks = 7  # 卷积核大小
-        self.arch = (3, 2, 5)  # 卷积层结构：基础卷积、stem 卷积、branch 卷积
+        self.arch = (2, 2, 4)  # 卷积层结构：基础卷积、stem 卷积、branch 卷积
         self.scale_factor = 2  # 下采样率
         self.with_ln = True  # 使用 LayerNorm
 
@@ -41,7 +43,8 @@ class WifiMamba(nn.Module):
         super(WifiMamba, self).__init__()
 
         self.embedding = Embedding(config.in_channels)
-
+        self.train_center_sample = 'radius'
+        self.train_center_sample_radius = 1.5
         # Mamba Backbone
         self.mamba_model = MambaBackbone(
             n_in=512,  # Must match the output of the embedding layer
@@ -65,27 +68,112 @@ class WifiMamba(nn.Module):
         #     max_seq_len=config.input_length,  # 输入序列的最大长度
         #     fpn_levels=config.arch[-1] + 1,  # FPN 层级数
         #     scale_factor=config.scale_factor,  # FPN 层间缩放倍数
-        #     regression_range=[                # 回归范围（示例）
-        #         [0, 64],
-        #         [64, 128],
-        #         [128, 256],
-        #         [256, 512],
-        #         [512, 1024],
-        #         [1024, 2048]
-        #     ],
+        #     regression_range=[
+        #         [0, 64],  # 第一层：从0到128
+        #         [64, 128],  # 第二层：从128到256
+        #         [128, 256],  # 第三层：从256到512
+        #         [256, 512],  # 第四层：从512到1024
+        #         [512, 1024]  # 第五层：从1024到2048
+        #     ]
+        # )
 
-        # Priors Generation
+        # Classification Head
+        self.cls_head = PtTransformerClsHead(
+            input_dim=config.n_embd,  # FPN 输出特征通道数
+            feat_dim=256,  # 分类头的中间层特征维度
+            num_classes=config.num_classes,  # 分类类别数
+            prior_prob=0.01,  # 初始化概率
+            num_layers=3,  # 卷积层数
+            kernel_size=3,  # 卷积核大小
+            act_layer=nn.ReLU,  # 激活函数
+            with_ln=config.with_ln,  # 是否使用 LayerNorm
+            empty_cls=[]  # 空类别
+        )
+
+        # Regression Head
+        self.reg_head = PtTransformerRegHead(
+            input_dim=config.n_embd,  # FPN 输出特征通道数
+            feat_dim=256,  # 回归头的中间层特征维度
+            fpn_levels=config.arch[-1] + 1,  # FPN 层级数
+            num_layers=3,  # 卷积层数
+            kernel_size=3,  # 卷积核大小
+            act_layer=nn.ReLU,  # 激活函数
+            with_ln=config.with_ln  # 是否使用 LayerNorm
+        )
+
+        self.num_classes = config.num_classes
+        self.total_frames = config.input_length
+
         self.priors = []
-        t = config.priors  # 初始特征点数量
-        for i in range(config.layer_num):
+        t = 2048
+        for i in range(config.arch[-1] + 1):
             self.priors.append(
                 torch.Tensor([[(c + 0.5) / t] for c in range(t)]).view(-1, 1)
             )
+            t = t // 2
+        # Initialize weights
+        self.initialize_weights()
 
-        self.num_classes = config.num_classes
+    def initialize_weights(self):
+        # Initialize embedding
+        for m in self.embedding.modules():
+            if isinstance(m, nn.Conv1d):
+                init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
 
-        # 用 mamba 的 point_generator 来生成 priors
-        # self.point_generator = self.mamba_model.point_generator
+        # Initialize backbone
+        for m in self.mamba_model.modules():
+            if isinstance(m, nn.Conv1d):
+                init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+
+        # Initialize neck
+        for m in self.neck.modules():
+            if isinstance(m, nn.Conv1d):
+                init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+
+        # Initialize classification head
+        for m in self.cls_head.modules():
+            if isinstance(m, nn.Conv1d):
+                init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+
+        # Initialize regression head
+        for m in self.reg_head.modules():
+            if isinstance(m, nn.Conv1d):
+                init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+
+        # Initialize LayerNorm
+        for m in self.modules():
+            if isinstance(m, nn.LayerNorm):
+                init.constant_(m.weight, 1)
+                init.constant_(m.bias, 0)
+
+    # @torch.no_grad()
+    # def label_points(self, points, gt_segments, gt_labels):
+    #     # concat points on all fpn levels List[T x 4] -> F T x 4
+    #     # This is shared for all samples in the mini-batch
+    #     num_levels = len(points)
+    #     concat_points = torch.cat(points, dim=0)
+    #     gt_cls, gt_offset = [], []
+    #
+    #     # loop over each video sample
+    #     for gt_segment, gt_label in zip(gt_segments, gt_labels):
+    #         cls_targets, reg_targets = self.label_points_single_video(
+    #             concat_points, gt_segment, gt_label
+    #         )
+    #         # append to list (len = # images, each of size FT x C)
+    #         gt_cls.append(cls_targets)
+    #         gt_offset.append(reg_targets)
+    #
+    #     return gt_cls, gt_offset
 
     def forward(self, x):
         # Step 1: Embedding x: (B, C, L)
@@ -101,27 +189,114 @@ class WifiMamba(nn.Module):
         fpn_feats, fpn_masks = self.neck(feats, masks)
 
         # points = self.point_generator(fpn_feats)
-        #
-        # priors = torch.cat(points, dim=0).unsqueeze(0).to(x.device)
 
-        print(feats.shape)
-        # # Step 4: Neck
-        # fpn_feats, fpn_masks = self.neck(feats, masks)
-        #
-        # # Step 5: Classification and Regression Heads
-        # cls_logits = [head(feat) for head, feat in zip(self.cls_head, feats)]
-        # reg_offsets = [head(feat) for head, feat in zip(self.reg_head, feats)]
-        #
-        # # Step 6: Generate Priors
-        # points = self.point_generator(fpn_feats)
-        # priors = torch.cat(points, dim=0).unsqueeze(0).to(reg_offsets[0].device)
-        #
-        # # Step 7: Reshape Outputs
-        # batch_size = x.size(0)
-        # loc = torch.cat([offset.view(batch_size, -1, 2) for offset in reg_offsets], dim=1)
-        # conf = torch.cat([logit.view(batch_size, -1, self.num_classes) for logit in cls_logits], dim=1)
-        #
-        # return loc, conf, priors
-        return 1
+        # out_cls: List[B, #cls + 1, T_i]
+        out_cls_logits = self.cls_head(fpn_feats, fpn_masks)
+        # out_offset: List[B, 2, T_i]
+        out_offsets = self.reg_head(fpn_feats, fpn_masks)
+
+        # permute the outputs
+        # out_cls: F List[B, #cls, T_i] -> F List[B, T_i, #cls]
+        out_cls_logits = [x.permute(0, 2, 1) for x in out_cls_logits]
+        # out_offset: F List[B, 2 (xC), T_i] -> F List[B, T_i, 2 (xC)]
+        out_offsets = [x.permute(0, 2, 1) for x in out_offsets]
+        # fpn_masks: F list[B, 1, T_i] -> F List[B, T_i]
+
+        priors = torch.cat(self.priors, 0).to(x.device).unsqueeze(0)
+        loc = torch.cat([o.view(B, -1, 2) for o in out_offsets], 1)
+        conf = torch.cat([o.view(B, -1, self.num_classes) for o in out_cls_logits], 1)
 
 
+        return {
+            'loc': loc,
+            'conf': conf,
+            'priors': priors # trainer ddp需要弄成priors[0]
+        }
+
+
+    #
+    # @torch.no_grad()
+    # def label_points_single_video(self, concat_points, gt_segment, gt_label):
+    #     # concat_points : F T x 4 (t, regressoin range, stride)
+    #     # gt_segment : N (#Events) x 2
+    #     # gt_label : N (#Events) x 1
+    #     num_pts = concat_points.shape[0]
+    #     num_gts = gt_segment.shape[0]
+    #
+    #     # corner case where current sample does not have actions
+    #     if num_gts == 0:
+    #         cls_targets = gt_segment.new_full((num_pts, self.num_classes), 0)
+    #         reg_targets = gt_segment.new_zeros((num_pts, 2))
+    #         return cls_targets, reg_targets
+    #
+    #     # compute the lengths of all segments -> F T x N
+    #     lens = gt_segment[:, 1] - gt_segment[:, 0]
+    #     lens = lens[None, :].repeat(num_pts, 1)
+    #
+    #     # compute the distance of every point to each segment boundary
+    #     # auto broadcasting for all reg target-> F T x N x2
+    #     gt_segs = gt_segment[None].expand(num_pts, num_gts, 2)
+    #     left = concat_points[:, 0, None] - gt_segs[:, :, 0]
+    #     right = gt_segs[:, :, 1] - concat_points[:, 0, None]
+    #     reg_targets = torch.stack((left, right), dim=-1)
+    #
+    #     if self.train_center_sample == 'radius':
+    #         # center of all segments F T x N
+    #         center_pts = 0.5 * (gt_segs[:, :, 0] + gt_segs[:, :, 1])
+    #         # center sampling based on stride radius
+    #         # compute the new boundaries:
+    #         # concat_points[:, 3] stores the stride
+    #         t_mins = \
+    #             center_pts - concat_points[:, 3, None] * self.train_center_sample_radius
+    #         t_maxs = \
+    #             center_pts + concat_points[:, 3, None] * self.train_center_sample_radius
+    #         # prevent t_mins / maxs from over-running the action boundary
+    #         # left: torch.maximum(t_mins, gt_segs[:, :, 0])
+    #         # right: torch.minimum(t_maxs, gt_segs[:, :, 1])
+    #         # F T x N (distance to the new boundary)
+    #         cb_dist_left = concat_points[:, 0, None] \
+    #                        - torch.maximum(t_mins, gt_segs[:, :, 0])
+    #         cb_dist_right = torch.minimum(t_maxs, gt_segs[:, :, 1]) \
+    #                         - concat_points[:, 0, None]
+    #         # F T x N x 2
+    #         center_seg = torch.stack(
+    #             (cb_dist_left, cb_dist_right), -1)
+    #         # F T x N
+    #         inside_gt_seg_mask = center_seg.min(-1)[0] > 0
+    #     else:
+    #         # inside an gt action
+    #         inside_gt_seg_mask = reg_targets.min(-1)[0] > 0
+    #
+    #     # limit the regression range for each location
+    #     max_regress_distance = reg_targets.max(-1)[0]
+    #     # F T x N
+    #     inside_regress_range = torch.logical_and(
+    #         (max_regress_distance >= concat_points[:, 1, None]),
+    #         (max_regress_distance <= concat_points[:, 2, None])
+    #     )
+    #
+    #     # if there are still more than one actions for one moment
+    #     # pick the one with the shortest duration (easiest to regress)
+    #     lens.masked_fill_(inside_gt_seg_mask==0, float('inf'))
+    #     lens.masked_fill_(inside_regress_range==0, float('inf'))
+    #     # F T x N -> F T
+    #     min_len, min_len_inds = lens.min(dim=1)
+    #
+    #     # corner case: multiple actions with very similar durations (e.g., THUMOS14)
+    #     min_len_mask = torch.logical_and(
+    #         (lens <= (min_len[:, None] + 1e-3)), (lens < float('inf'))
+    #     ).to(reg_targets.dtype)
+    #
+    #     # cls_targets: F T x C; reg_targets F T x 2
+    #     gt_label_one_hot = F.one_hot(
+    #         gt_label, self.num_classes
+    #     ).to(reg_targets.dtype)
+    #     cls_targets = min_len_mask @ gt_label_one_hot
+    #     # to prevent multiple GT actions with the same label and boundaries
+    #     cls_targets.clamp_(min=0.0, max=1.0)
+    #     # OK to use min_len_inds
+    #     reg_targets = reg_targets[range(num_pts), min_len_inds]
+    #     # normalization based on stride
+    #     reg_targets /= concat_points[:, 3, None]
+    #
+    #     return cls_targets, reg_targets
