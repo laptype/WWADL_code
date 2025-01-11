@@ -175,7 +175,7 @@ if __name__ == '__main__':
 
     model_cfg = WifiMamba_config('34_2048_30')
     model = WifiMamba(model_cfg).to('cuda')
-    model.train()
+    # model.train()
     # model_cfg = wifiTAD_config('34_2048_30_0')
     # model = wifiTAD(model_cfg).to('cuda')
 

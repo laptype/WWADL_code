@@ -9,6 +9,7 @@ from model.TAD.embedding import Embedding
 from model.mamba.loc_generators import PointGenerator
 from utils.basic_config import Config
 from model.mamba.head import PtTransformerClsHead, PtTransformerRegHead
+from model.mamba.downsample import Downsample
 
 class WifiMamba_config(Config):
     """
@@ -29,17 +30,17 @@ class WifiMamba_config(Config):
 
         # Mamba Backbone 配置
         self.n_embd = 512  # 嵌入维度
-        self.n_embd_ks = 7  # 卷积核大小
+        self.n_embd_ks = 3  # 卷积核大小
         self.arch = (2, 2, 4)  # 卷积层结构：基础卷积、stem 卷积、branch 卷积
-        self.scale_factor = 2  # 下采样率
+        self.scale_factor = 4  # 下采样率
         self.with_ln = True  # 使用 LayerNorm
 
         # Pyramid Detection 配置
-        self.priors = 128  # 初始特征点数量
+        self.priors = 256  # 初始特征点数量
         self.layer_num = 4  # 特征金字塔层数
 
 class WifiMamba(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: WifiMamba_config):
         super(WifiMamba, self).__init__()
 
         self.embedding = Embedding(config.in_channels)
@@ -61,6 +62,16 @@ class WifiMamba(nn.Module):
             out_channel=config.n_embd,  # 输出特征通道数
             scale_factor=config.scale_factor,  # 下采样倍率
             with_ln=config.with_ln  # 是否使用 LayerNorm
+        )
+
+        # Initialize the Downsample layer after mamba outputs
+        self.downsample = Downsample(
+            in_channels=[config.n_embd] * (config.arch[-1] + 1),  # 输入特征通道，假设每一层的输出特征通道一致
+            out_channel=config.n_embd,  # 输出特征通道数
+            kernel_size=3,    # Use kernel size 3
+            stride=2,         # Downsampling by a factor of 2
+            num_steps=3,      # Use 3 steps to gradually reduce channels
+            activation_fn=F.relu  # Use ReLU activation
         )
 
         # Point Generator
@@ -105,7 +116,7 @@ class WifiMamba(nn.Module):
         self.total_frames = config.input_length
 
         self.priors = []
-        t = 2048
+        t = config.priors
         for i in range(config.arch[-1] + 1):
             self.priors.append(
                 torch.Tensor([[(c + 0.5) / t] for c in range(t)]).view(-1, 1)
@@ -185,6 +196,8 @@ class WifiMamba(nn.Module):
         batched_masks = torch.ones(B, 1, L, dtype=torch.bool).to(x.device)
         # Step 3: Backbone
         feats, masks = self.mamba_model(x, batched_masks)
+
+        feats, masks = self.downsample(feats, masks)  # 对 feats 进行降采样
 
         fpn_feats, fpn_masks = self.neck(feats, masks)
 
@@ -300,3 +313,4 @@ class WifiMamba(nn.Module):
     #     reg_targets /= concat_points[:, 3, None]
     #
     #     return cls_targets, reg_targets
+

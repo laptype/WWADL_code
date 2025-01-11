@@ -79,7 +79,7 @@ class Pyramid_Detection(nn.Module):
             assert not torch.isnan(deep_feat).any(), f"NaN detected in deep_feat after skip_tsse layer {i}"
         
         
-        batch_num = deep_feat.size(0)
+        batch_num = deep_feat.size(0) # (4, 512, 256)
         out_feats = []
         locs = []
         confs = []
