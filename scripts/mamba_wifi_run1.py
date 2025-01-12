@@ -29,13 +29,11 @@ if __name__ == '__main__':
     dataset_str_list = [
 
 
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-12'),
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-4'),
-        # ('WWADLDatasetSingle', 'imu_30_3_gl', '34_2048_6_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3_rh', '34_2048_6_0'),
-        # ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
-
+        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-12'),
+        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-8'),
+        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-4'),
+        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_1'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
 
         # ('WWADLDatasetSingle', 'wifi_30_3_0', '34_2048_90_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3_1', '34_2048_90_0'),
@@ -64,17 +62,17 @@ if __name__ == '__main__':
 
             config['datetime'] = get_time()
             config["training"]["DDP"]["enable"] = True
-            config["training"]["DDP"]["devices"] = [1]
+            config["training"]["DDP"]["devices"] = [0]
 
             config["model"]["model_set"] = model_set
             config["model"]["backbone_name"] = model_name
 
             config["training"]["lr_rate"] = 4e-05
 
-            test_gpu = 1
+            test_gpu = 0
 
             # TAG ===============================================================================================
-            tag = f'mambaimu_head_layer'
+            tag = f'mambawifi_head_layer'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)

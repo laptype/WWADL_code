@@ -195,7 +195,7 @@ if __name__ == '__main__':
         print(f"Batch {i} data shape: {data_batch.shape}")
         print(f"Batch {i} labels: {len(label_batch)}")
         data_batch = data_batch.to('cuda')
-        output = model(data_batch)
+        output = model(data_batch, label_batch)
 
         break
 

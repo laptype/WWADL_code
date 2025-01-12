@@ -910,6 +910,7 @@ class MaskMambaBlock(nn.Module):
         if use_mamba_type == 'vim':
             # vim
             self.mamba = ViM(n_embd, d_conv=kernel_size, use_fast_path=True)
+            # TODO: DBM
         else:
             raise NotImplementedError
         if n_ds_stride > 1:

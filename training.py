@@ -17,7 +17,8 @@ def train(config, type = 'dp'):
     model = init_model(config)
 
     print('model params: ', sum(p.numel() for p in model.parameters() if p.requires_grad))
-
+    if config['model']['backbone_name'] == 'WifiMamba':
+        print('mamba backbone: ', sum(p.numel() for p in model.mamba_model.parameters() if p.requires_grad))
     # backbone_gflops = count_gflops(strategy.backbone, (64, 90, 1000))
     # print(f'Backbone GFLOPs: {backbone_gflops}')
     if type == 'dp':

@@ -273,6 +273,8 @@ class Trainer(object):
 
                 tbar.set_description('Epoch: %d: ' % (epoch + 1))
                 tbar.set_postfix(train_loss=loss)
+                # 每次迭代清理显存
+                torch.cuda.empty_cache()
 
 
             tbar.close()
