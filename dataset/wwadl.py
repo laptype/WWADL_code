@@ -171,13 +171,16 @@ if __name__ == '__main__':
     # train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/wifi_30_3', split='train')
 
     from torch.utils.data import DataLoader
-    from model import wifiTAD, wifiTAD_config, WifiMamba_config, WifiMamba
+    from model import wifiTAD, wifiTAD_config, WifiMamba_config, WifiMamba, WifiMambaSkip_config, WifiMambaSkip
 
-    model_cfg = WifiMamba_config('34_2048_30')
-    model = WifiMamba(model_cfg).to('cuda')
+    # model_cfg = WifiMamba_config('34_2048_30')
+    # model = WifiMamba(model_cfg).to('cuda')
     # model.train()
     # model_cfg = wifiTAD_config('34_2048_30_0')
     # model = wifiTAD(model_cfg).to('cuda')
+
+    model_cfg = WifiMambaSkip_config('34_2048_30')
+    model = WifiMambaSkip(model_cfg).to('cuda')
 
     # 定义 DataLoader
     batch_size = 4
@@ -195,7 +198,7 @@ if __name__ == '__main__':
         print(f"Batch {i} data shape: {data_batch.shape}")
         print(f"Batch {i} labels: {len(label_batch)}")
         data_batch = data_batch.to('cuda')
-        output = model(data_batch, label_batch)
+        output = model(data_batch)
 
         break
 

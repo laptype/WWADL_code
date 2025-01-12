@@ -22,16 +22,18 @@ if __name__ == '__main__':
 
     model_str_list = [
         # model,    batch size,      epoch
-        ('WifiMamba', 16, 55),
+        ('WifiMambaSkip', 16, 55),
+        # ('WifiMamba', 16, 55),
         # ('wifiTAD', 16, 55)
     ]
 
     dataset_str_list = [
 
-
-        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-12'),
         ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-8'),
+        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
         ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-4'),
+        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-4'),
+        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-4'),
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_1'),
         # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_0'),
 
@@ -72,7 +74,7 @@ if __name__ == '__main__':
             test_gpu = 0
 
             # TAG ===============================================================================================
-            tag = f'mambawifi_head_layer'
+            tag = f'mambaskip_head_layer'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
