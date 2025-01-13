@@ -5,9 +5,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from .weight_init import trunc_normal_
-
 from mamba_ssm.modules.mamba_simple import Mamba as ViM
-# from mamba_ssm.modules.mamba_new import Mamba as DBM
+from mamba_ssm.modules.mamba_new import Mamba as DBM
 
 
 
@@ -907,10 +906,11 @@ class MaskMambaBlock(nn.Module):
         use_mamba_type="vim"
     ) -> None:
         super().__init__()
-        if use_mamba_type == 'vim':
+        if use_mamba_type == 'dbm':
+            self.mamba = DBM(n_embd, d_conv=kernel_size, use_fast_path=True, expand=1)
+        elif use_mamba_type == "vim":
             # vim
-            self.mamba = ViM(n_embd, d_conv=kernel_size, use_fast_path=True)
-            # TODO: DBM
+            self.mamba = ViM(n_embd, d_conv=kernel_size, bimamba_type="v2", use_fast_path=True)
         else:
             raise NotImplementedError
         if n_ds_stride > 1:
