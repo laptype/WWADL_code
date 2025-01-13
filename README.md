@@ -7,3 +7,14 @@
 2. pip install causal-conv1d will compile the CUDA part. (这个可能有效？)
 https://github.com/Dao-AILab/causal-conv1d/issues/9
 [Mamba windows 环境安装踩坑](https://gitcode.csdn.net/66c9bc121338f221f9235f34.html?dp_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6Njc3MjMzLCJleHAiOjE3MzczNjMwMzIsImlhdCI6MTczNjc1ODIzMiwidXNlcm5hbWUiOiJMYVB0XyJ9.Hgn40iMpukN-M6YjdOEh2qi8E7h0CHyzO77lIwrmnqc&spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Eactivity-3-139382288-blog-144576282.235%5Ev43%5Epc_blog_bottom_relevance_base1&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Eactivity-3-139382288-blog-144576282.235%5Ev43%5Epc_blog_bottom_relevance_base1&utm_relevant_index=4)
+
+
+docker 安装：
+https://zhuanlan.zhihu.com/p/675938110
+
+
+causal-conv1d
+[quesion](https://stackoverflow.com/questions/78199621/typeerror-causal-conv1d-fwd-incompatible-function-arguments)
+
+
+[link](https://github.com/state-spaces/mamba/issues/40#issuecomment-1849095898)

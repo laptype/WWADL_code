@@ -6,10 +6,13 @@ import subprocess
 # project_path = '/home/lanbo/WWADL/WWADL_code'
 # dataset_root_path = '/data/WWADL/dataset'
 
+# 定义路径
 project_path = '/root/shared-nvme/code/WWADL_code'
 dataset_root_path = '/root/shared-nvme/dataset'
-
+causal_conv1d_path = '/root/shared-nvme/video-mamba-suite/causal-conv1d'
+mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
 sys.path.append(project_path)
+os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
 
 from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config
 from global_config import config

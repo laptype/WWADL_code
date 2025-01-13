@@ -8,8 +8,10 @@ import subprocess
 
 project_path = '/root/shared-nvme/code/WWADL_code'
 dataset_root_path = '/root/shared-nvme/dataset'
-
+causal_conv1d_path = '/root/shared-nvme/video-mamba-suite/causal-conv1d'
+mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
 sys.path.append(project_path)
+os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
 
 from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config
 from global_config import config
@@ -22,16 +24,18 @@ if __name__ == '__main__':
 
     model_str_list = [
         # model,    batch size,      epoch
-        ('WifiMamba', 16, 55),
+        ('WifiMambaSkip', 16, 55),
+        # ('WifiMamba', 16, 55),
         # ('wifiTAD', 16, 55)
     ]
 
     dataset_str_list = [
 
-
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-12'),
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-4'),
+        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8_m-dbm'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8_m-dbm'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-12'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-4'),
         # ('WWADLDatasetSingle', 'imu_30_3_gl', '34_2048_6_0'),
         # ('WWADLDatasetSingle', 'imu_30_3_rh', '34_2048_6_0'),
         # ('WWADLDatasetSingle', 'imu_30_3_rp', '34_2048_6_0'),
@@ -74,7 +78,7 @@ if __name__ == '__main__':
             test_gpu = 1
 
             # TAG ===============================================================================================
-            tag = f'mambaimu_head_layer'
+            tag = f'mambaskip_dbm'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)

@@ -21,7 +21,7 @@ class WifiMambaSkip_config(Config):
     支持的参数格式：{num_classes}_{input_length}_{in_channels}
     """
 
-    def __init__(self, model_set: str = '34_2048_270_l-3'):
+    def __init__(self, model_set: str = '34_2048_270_l-3_m-dbm'):
         """
         初始化 WifiMamba 配置实例。
         :param model_set: 模型配置字符串，格式为 num_classes_input_length_in_channels
@@ -38,12 +38,12 @@ class WifiMambaSkip_config(Config):
             for item in others:
                 if '-' in item:
                     key, value = item.split('-')
-                    self.additional_config[key] = int(value)  # 假设 value 是整数，可以根据需求修改类型
+                    self.additional_config[key] = str(value)  # 假设 value 是整数，可以根据需求修改类型
 
         layer = 4
 
         if 'l' in self.additional_config:
-            layer = self.additional_config['l']
+            layer = int(self.additional_config['l'])
 
         # Mamba Backbone 配置
         self.n_embd = 512  # 嵌入维度
@@ -62,6 +62,10 @@ class WifiMambaSkip_config(Config):
         self.head = 'wifiadl_head'
 
         self.layer_skip = 3
+        self.mamba_type = 'dbm'
+        # vim
+        if 'm' in self.additional_config:
+            self.mamba_type = self.additional_config['m']
 
 
 
@@ -80,7 +84,8 @@ class WifiMambaSkip(nn.Module):
             n_embd_ks=config.n_embd_ks,
             arch=config.arch,
             scale_factor=config.scale_factor,
-            with_ln=config.with_ln
+            with_ln=config.with_ln,
+            mamba_type=config.mamba_type
         )
 
         # Neck: FPNIdentity

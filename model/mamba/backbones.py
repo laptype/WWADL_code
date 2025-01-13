@@ -246,6 +246,7 @@ class MambaBackbone(nn.Module):
         arch = (2, 2, 5),   # (#convs, #stem convs, #branch convs)
         scale_factor = 2,   # dowsampling rate for the branch
         with_ln=False,      # if to use layernorm
+        mamba_type = 'vim'
     ):
         super().__init__()
         assert len(arch) == 3
@@ -276,12 +277,12 @@ class MambaBackbone(nn.Module):
         # stem network using (vanilla) transformer
         self.stem = nn.ModuleList()
         for idx in range(arch[1]):
-            self.stem.append(MaskMambaBlock(n_embd))
+            self.stem.append(MaskMambaBlock(n_embd, use_mamba_type=mamba_type))
 
         # main branch using transformer with pooling
         self.branch = nn.ModuleList()
         for idx in range(arch[2]):
-            self.branch.append(MaskMambaBlock(n_embd, n_ds_stride=2))
+            self.branch.append(MaskMambaBlock(n_embd, n_ds_stride=2, use_mamba_type=mamba_type))
 
         # init weights
         self.apply(self.__init_weights__)
