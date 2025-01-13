@@ -14,7 +14,35 @@ https://zhuanlan.zhihu.com/p/675938110
 
 
 causal-conv1d
+
 [quesion](https://stackoverflow.com/questions/78199621/typeerror-causal-conv1d-fwd-incompatible-function-arguments)
 
 
-[link](https://github.com/state-spaces/mamba/issues/40#issuecomment-1849095898)
+[修改setup代码 link](https://github.com/state-spaces/mamba/issues/40#issuecomment-1849095898)
+
+
+完整步骤
+1. 确保cuda118
+
+```bash
+# clone video-mamba-suite
+git clone --recursive https://github.com/OpenGVLab/video-mamba-suite.git
+
+# create environment
+conda create -n video-mamba-suite python=3.9
+conda activate video-mamba-suite
+
+# install pytorch
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+
+# install requirements
+pip install -r requirement.txt
+
+# install mamba
+cd causal-conv1d
+python setup.py develop
+cd ..
+cd mamba
+python setup.py develop
+cd ..
+```

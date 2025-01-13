@@ -13,14 +13,14 @@ from model.mamba.downsample import Downsample
 from model.TAD.head import PredictionHead
 from model.TAD.module import ScaleExp
 from model.TAD.backbone import TSSE, LSREF
+from model.models import register_model, register_model_config
 
-
+@register_model_config('WifiMambaSkip')
 class WifiMambaSkip_config(Config):
     """
     WifiMamba 的配置类，用于初始化模型参数。
     支持的参数格式：{num_classes}_{input_length}_{in_channels}
     """
-
     def __init__(self, model_set: str = '34_2048_270_l-3_m-dbm'):
         """
         初始化 WifiMamba 配置实例。
@@ -69,7 +69,7 @@ class WifiMambaSkip_config(Config):
 
 
 
-
+@register_model('WifiMambaSkip')
 class WifiMambaSkip(nn.Module):
     def __init__(self, config: WifiMambaSkip_config):
         super(WifiMambaSkip, self).__init__()

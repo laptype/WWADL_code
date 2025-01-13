@@ -7,7 +7,9 @@ from model.TAD.backbone import TSSE, LSREF
 from model.TAD.head import PredictionHead
 from utils.basic_config import Config
 # from torch.nn import SyncBatchNorm
+from model.models import register_model, register_model_config
 
+@register_model_config('wifiTAD')
 class wifiTAD_config(Config):
 
     def __init__(self, model_set: str = '34_2048_30_0'):
@@ -111,7 +113,7 @@ class Pyramid_Detection(nn.Module):
         priors = torch.cat(self.priors, 0).to(loc.device).unsqueeze(0)
         return loc, conf, priors
 
-
+@register_model('wifiTAD')
 class wifitad(nn.Module):
     def __init__(self, config: wifiTAD_config):
         super(wifitad, self).__init__()
