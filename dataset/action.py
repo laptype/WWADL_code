@@ -56,6 +56,6 @@ for action, old_id in action_to_id.items():
 new_id_to_action = {v: translations[k] for k, v in new_action_to_id.items()}
 
 # 输出新映射
-print("Old to New Mapping:", old_to_new_mapping)
-print("New Action to ID:", new_action_to_id)
-print("new_id_to_action", new_id_to_action)
+# print("Old to New Mapping:", old_to_new_mapping)
+# print("New Action to ID:", new_action_to_id)
+# print("new_id_to_action", new_id_to_action)

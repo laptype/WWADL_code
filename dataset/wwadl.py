@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 
 
 class WWADLDatasetSingle(Dataset):
-    def __init__(self, dataset_dir, split="train", normalize=True):
+    def __init__(self, dataset_dir, split="train", normalize=True, modality = None):
         """
         初始化 WWADL 数据集。
         :param dataset_dir: 数据集所在目录路径。
@@ -29,18 +29,19 @@ class WWADLDatasetSingle(Dataset):
         with open(self.info_path, 'r') as json_file:
             self.info = json.load(json_file)
 
-        assert len(self.info['modality_list']) == 1, "single modality"
-
-        self.modality = self.info['modality_list'][0]
+        if modality is None:
+            assert len(self.info['modality_list']) == 1, "single modality"
+            self.modality = self.info['modality_list'][0]
+        else:
+            self.modality = modality
 
         with open(self.label_path, 'r') as json_file:
             self.labels = json.load(json_file)[self.modality]
 
         # 加载或计算全局均值和方差
-        # 加载或计算全局均值和方差
         if self.normalize:
             if os.path.exists(self.stats_path):
-                self.global_mean, self.global_std = self.load_global_stats()  # 文件存在则加载
+                self.load_global_stats()  # 文件存在则加载
             elif split == "train":
                 self.global_mean, self.global_std = self.compute_global_mean_std()  # 训练集计算
                 self.save_global_stats()  # 保存均值和方差
@@ -85,8 +86,10 @@ class WWADLDatasetSingle(Dataset):
         保存全局均值和方差到文件。
         """
         stats = {
-            "global_mean": self.global_mean.tolist(),
-            "global_std": self.global_std.tolist()
+            self.modality: {
+                "global_mean": self.global_mean.tolist(),
+                "global_std": self.global_std.tolist()
+            }
         }
         with open(self.stats_path, 'w') as f:
             json.dump(stats, f)
@@ -95,11 +98,26 @@ class WWADLDatasetSingle(Dataset):
     def load_global_stats(self):
         """
         从文件加载全局均值和方差。
+        如果文件中不存在当前 modality，则计算并更新文件。
         """
         with open(self.stats_path, 'r') as f:
             stats = json.load(f)
-        print(f"Loaded global stats from {self.stats_path}")
-        return np.array(stats["global_mean"]), np.array(stats["global_std"])
+
+        # 如果当前 modality 不在文件中，计算并保存
+        if self.modality not in stats:
+            print(f"Modality '{self.modality}' not found in stats file. Computing and updating...")
+            global_mean, global_std = self.compute_global_mean_std()
+            stats[self.modality] = {
+                "global_mean": global_mean.tolist(),
+                "global_std": global_std.tolist()
+            }
+            with open(self.stats_path, 'w') as f:
+                json.dump(stats, f)
+            print(f"Updated global stats saved to {self.stats_path}")
+
+        # 从文件中加载当前 modality 的均值和方差
+        self.global_mean = np.array(stats[self.modality]["global_mean"])
+        self.global_std = np.array(stats[self.modality]["global_std"])
 
     def shape(self):
         with h5py.File(self.data_path, 'r') as h5_file:
@@ -166,8 +184,10 @@ def detection_collate(batch):
     return torch.stack(clips, 0), targets
 
 if __name__ == '__main__':
+
     import matplotlib.pyplot as plt
-    train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/imu_30_3', split='train')
+    train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='imu')
+    train_dataset_2 = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='wifi')
     # train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/wifi_30_3', split='train')
 
     from torch.utils.data import DataLoader
@@ -198,7 +218,7 @@ if __name__ == '__main__':
         print(f"Batch {i} data shape: {data_batch.shape}")
         print(f"Batch {i} labels: {len(label_batch)}")
         data_batch = data_batch.to('cuda')
-        output = model(data_batch)
+        # output = model(data_batch)
 
         break
 

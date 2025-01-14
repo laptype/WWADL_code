@@ -9,8 +9,8 @@ from tqdm import tqdm
 from dataset.modality.wifi import WWADL_wifi
 from dataset.modality.imu import WWADL_imu
 from dataset.modality.airpods import WWADL_airpods
-
-from scipy.interpolate import interp1d
+from dataset.modality.base import handle_nan_and_interpolate
+from dataset.action import id_to_action
 
 
 def load_file_list(dataset_path):
@@ -28,38 +28,58 @@ def load_file_list(dataset_path):
 
 class WWADLDatasetTestSingle():
 
-    def __init__(self, config):
-        dataset_dir = config['path']['dataset_path']
-        self.dataset_dir = dataset_dir
+    def __init__(self, config, modality=None):
+        # 初始化路径配置
+        self.dataset_dir = config['path']['dataset_path']
         dataset_root_path = config['path']['dataset_root_path']
-        self.test_file_list = load_file_list(dataset_dir)
+        self.test_file_list = load_file_list(self.dataset_dir)
 
-        self.info_path = os.path.join(dataset_dir, f"info.json")
-
+        # 读取info.json文件
+        self.info_path = os.path.join(self.dataset_dir, "info.json")
         with open(self.info_path, 'r') as json_file:
             self.info = json.load(json_file)
 
-        assert len(self.info['modality_list']) == 1, "single modality"
-        self.modality = self.info['modality_list'][0]
+        if modality is None:
+            assert len(self.info['modality_list']) == 1, "single modality"
+            self.modality = self.info['modality_list'][0]
+        else:
+            self.modality = modality
+        # 构建测试文件路径列表
+        self.file_path_list = [
+            os.path.join(dataset_root_path, self.modality, t)
+            for t in self.test_file_list
+        ]
 
-        self.file_path_list = [os.path.join(dataset_root_path, self.modality, t) for t in self.test_file_list]
+        # 设置接收器过滤规则和新映射
+        self.receivers_to_keep = self.info.get('receivers_to_keep', {
+            "imu": None,
+            "wifi": None,
+            "airpods": None
+        })
+        self.new_mapping = self.info.get('new_mapping', None)
 
-        modality_dataset = {
+        # 定义模态数据集映射
+        self.modality_dataset_map = {
             'imu': WWADL_imu,
             'wifi': WWADL_wifi,
             'airpods': WWADL_airpods
         }
+        self.modality_dataset = self.modality_dataset_map[self.modality]
 
-        self.clip_length = self.info['segment_info']['train']['window_len']
-        self.stride = self.info['segment_info']['train']['window_step']
+        # 加载分段和目标信息
+        segment_info = self.info['segment_info']['train']
+        self.clip_length = segment_info['window_len']
+        self.stride = segment_info['window_step']
         self.target_len = self.info['segment_info']['target_len']
 
-        self.modality_dataset = modality_dataset[self.modality]
+        # 加载评估标签路径
+        self.eval_gt = os.path.join(self.dataset_dir, f'{self.modality}_annotations.json')
 
-        self.eval_gt = os.path.join(dataset_dir, f'{self.modality}_annotations.json')
-
-        # 加载全局均值和方差
+        # 加载全局均值和标准差
         self.global_mean, self.global_std = self.load_global_stats()
+
+        # 初始化动作ID到动作映射
+        self.id_to_action = self.info.get('id2action', id_to_action)
 
     def load_global_stats(self):
         """
@@ -75,7 +95,9 @@ class WWADLDatasetTestSingle():
         return np.array(stats["global_mean"]), np.array(stats["global_std"])
 
     def get_data(self, file_path):
-        sample = self.modality_dataset(file_path)
+        sample = self.modality_dataset(file_path,
+                                       receivers_to_keep=self.receivers_to_keep[self.modality],
+                                       new_mapping=self.new_mapping)
         sample_count = len(sample.data)
 
         # 生成 offset 列表，用于分割视频片段
@@ -89,13 +111,9 @@ class WWADLDatasetTestSingle():
         for offset in offsetlist:
             clip = sample.data[offset: offset + self.clip_length]  # 获取当前的 clip
 
-            # 替换 NaN 为 0
-            clip = np.nan_to_num(clip, nan=0.0, posinf=0.0, neginf=0.0)
-
-            # 插值到 target_len 长度
-            original_indices = np.linspace(0, self.clip_length - 1, self.clip_length)
-            target_indices = np.linspace(0, self.clip_length - 1, self.target_len)
-            clip = interp1d(original_indices, clip, axis=0, kind='linear')(target_indices)
+            # 调用封装的函数进行处理
+            clip = handle_nan_and_interpolate(clip, self.clip_length, self.target_len)
+            assert not np.any(np.isnan(clip)), "Data contains NaN values!"
 
             clip = torch.from_numpy(clip)  # 转为 Tensor
 
@@ -108,7 +126,6 @@ class WWADLDatasetTestSingle():
                 clip = clip.reshape(-1, clip.shape[-1])  # [3*3*30, 2048]
 
             clip = clip.float()
-
 
             # 归一化
             clip = (clip - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \

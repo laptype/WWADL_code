@@ -8,7 +8,7 @@ import numpy as np
 from dataset.wwadl_test import WWADLDatasetTestSingle
 from strategy.evaluation.softnms import softnms_v2
 from strategy.evaluation.eval_detection import ANETdetection
-from dataset.action import id_to_action
+# from dataset.action import id_to_action
 
 class Tester(object):
     def __init__(self,
@@ -31,6 +31,7 @@ class Tester(object):
         self.nms_sigma = config['testing']['nms_sigma']
 
         self.eval_gt = test_dataset.eval_gt
+        self.id_to_action = test_dataset.id_to_action
 
         if pt_file_name is None:
             pt_file_name = self.get_latest_checkpoint()
@@ -117,7 +118,7 @@ class Tester(object):
             # 生成 JSON 格式的结果
             proposal_list = []
             for cl in range(1, self.num_classes):  # 遍历每个类别
-                class_name = id_to_action[cl]  # 获取类别名称
+                class_name = self.id_to_action[cl]  # 获取类别名称
                 tmp = flt[cl].contiguous()
                 tmp = tmp[(tmp[:, 2] > 0).unsqueeze(-1).expand_as(tmp)].view(-1, 3)  # 筛选有效结果
                 if tmp.size(0) == 0:
