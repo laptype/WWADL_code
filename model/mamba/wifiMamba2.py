@@ -74,7 +74,7 @@ class WifiMambaSkip(nn.Module):
     def __init__(self, config: WifiMambaSkip_config):
         super(WifiMambaSkip, self).__init__()
 
-        self.embedding = Embedding(config.in_channels)
+        self.embedding = Embedding(config.in_channels, stride=2)
         self.train_center_sample = 'radius'
         self.train_center_sample_radius = 1.5
         # Mamba Backbone
@@ -96,9 +96,9 @@ class WifiMambaSkip(nn.Module):
             with_ln=config.with_ln  # 是否使用 LayerNorm
         )
 
-        self.skip_tsse = nn.ModuleList()
-        for i in range(config.layer_skip):
-            self.skip_tsse.append(TSSE(in_channels=512, out_channels=256, kernel_size=3, stride=2, length=(config.input_length // 2)//(2**i)))
+        # self.skip_tsse = nn.ModuleList()
+        # for i in range(config.layer_skip):
+        #     self.skip_tsse.append(TSSE(in_channels=512, out_channels=256, kernel_size=3, stride=2, length=(config.input_length // 2)//(2**i)))
 
         if config.head == 'mamba_head':
 
@@ -175,12 +175,22 @@ class WifiMambaSkip(nn.Module):
 
     def forward(self, x):
         # Step 1: Embedding x: (B, C, L)
-        # x: (B, C, L)
+        # x: (B, C, 2048)
         B, C, L = x.size()
         x = self.embedding(x)
+        # x: (B, 512, 256)
 
-        for i in range(len(self.skip_tsse)):
-            x = self.skip_tsse[i](x)
+        # resnet TODO 不用这个试试, stride 改成 2
+        '''
+            1. x = self.embedding(x, stride=2)
+            2. vit
+                x = self._pickup_patching(x)    # 16, 63, 1440
+                x = self.embedding(x)   # 16 63 512
+        '''
+        # for i in range(len(self.skip_tsse)):
+        #     x = self.skip_tsse[i](x)
+
+        # x: (B, 512, 256)
 
         B, C, L = x.size()
 

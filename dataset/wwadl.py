@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
     train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='imu')
-    train_dataset_2 = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='wifi')
+    # train_dataset_2 = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='wifi')
     # train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/wifi_30_3', split='train')
 
     from torch.utils.data import DataLoader
@@ -218,7 +218,7 @@ if __name__ == '__main__':
         print(f"Batch {i} data shape: {data_batch.shape}")
         print(f"Batch {i} labels: {len(label_batch)}")
         data_batch = data_batch.to('cuda')
-        # output = model(data_batch)
+        output = model(data_batch)
 
         break
 
