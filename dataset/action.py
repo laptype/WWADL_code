@@ -20,7 +20,7 @@ translations = {
     '玩手机': 'Using Phone', '看书': 'Reading', '给植物浇水': 'Watering Plants', '走向床': 'Walking to Bed',
     '走向椅子': 'Walking to Chair', '走向橱柜': 'Walking to Cabinet', '走向窗户': 'Walking to Window',
     '走向黑板': 'Walking to Blackboard', '起床': 'Getting Out of Bed', '起立': 'Standing Up',
-    '躺下': 'Lying Down', '静止站立': 'Standing Still', '静止躺着': 'Lying Still'
+    '躺下': 'Lying Down', '静止站立': 'Standing Still', '静止躺着': 'Lying Still', '走路': 'Walking'
 }
 
 # Create id_to_action mapping
@@ -30,3 +30,32 @@ english_action_to_id = {translations[k]: v for k, v in action_to_id.items()}
 # Output results
 # print("action_to_id:", action_to_id)
 # print("id_to_action:", id_to_action)
+
+'''
+将走路合并
+'''
+# 创建新的标签映射（30类）
+old_to_new_mapping = {}
+new_action_to_id = {}
+current_id = 0
+# 合并的“走路”相关动作
+walk_actions = ['走向床', '走向椅子', '走向橱柜', '走向窗户', '走向黑板']
+
+for action, old_id in action_to_id.items():
+    if action in walk_actions:
+        if '走路' not in new_action_to_id:  # 将所有走路相关动作合并为一类
+            new_action_to_id['走路'] = current_id
+            current_id += 1
+        old_to_new_mapping[old_id] = new_action_to_id['走路']
+    else:
+        if action not in new_action_to_id:
+            new_action_to_id[action] = current_id
+            current_id += 1
+        old_to_new_mapping[old_id] = new_action_to_id[action]
+
+new_id_to_action = {v: translations[k] for k, v in new_action_to_id.items()}
+
+# 输出新映射
+print("Old to New Mapping:", old_to_new_mapping)
+print("New Action to ID:", new_action_to_id)
+print("new_id_to_action", new_id_to_action)
