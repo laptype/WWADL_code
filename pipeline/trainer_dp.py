@@ -197,19 +197,6 @@ class Trainer(object):
         # 反向传播
         loss.backward()
 
-        # for name, param in self.model.named_parameters():
-        #     if param.grad is not None:
-        #         if torch.isnan(param.grad).any() or torch.isinf(param.grad).any():
-        #             logging.info(f"Gradient anomaly detected in parameter: {name}")
-        #             logging.info(f"Gradient min: {param.grad.min()}, Gradient max: {param.grad.max()}")
-        #             # 清理异常梯度
-        #             param.grad = torch.nan_to_num(param.grad, nan=0.0, posinf=1.0, neginf=-1.0)
-        #             logging.info(f"Gradient for {name} has been cleaned.")
-
-        # **梯度裁剪**
-        # parameters_with_grad = [p for p in self.model.parameters() if p.grad is not None]
-        # torch.nn.utils.clip_grad_norm_(parameters_with_grad, max_norm=1.0)
-
         # 优化器更新权重
         self.optimizer.step()
 
