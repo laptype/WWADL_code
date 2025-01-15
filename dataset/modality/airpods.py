@@ -3,7 +3,7 @@ from utils.h5 import load_h5
 
 
 class WWADL_airpods(WWADLBase):
-    def __init__(self, file_path, devices_to_keep = None, new_mapping=None):
+    def __init__(self, file_path, receivers_to_keep = None, new_mapping=None):
         super().__init__(file_path)
         self.duration = 0
         self.load_data(file_path)

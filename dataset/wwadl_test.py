@@ -81,9 +81,11 @@ class WWADLDatasetTestSingle():
         # 初始化动作ID到动作映射
         self.id_to_action = self.info.get('id2action', id_to_action)
 
+
     def load_global_stats(self):
         """
         从文件加载全局均值和方差。
+        如果文件中不存在当前 modality，则计算并更新文件。
         """
         stats_path = os.path.join(self.dataset_dir, "global_stats.json")
         if not os.path.exists(stats_path):
@@ -91,8 +93,16 @@ class WWADLDatasetTestSingle():
 
         with open(stats_path, 'r') as f:
             stats = json.load(f)
-        print(f"Loaded global stats from {stats_path}")
-        return np.array(stats["global_mean"]), np.array(stats["global_std"])
+        # 如果当前 modality 不在文件中，计算并保存
+        if self.modality not in stats:
+            raise FileNotFoundError(
+                f"Modality '{self.modality}' not found in stats file. Ensure it is generated during training.")
+
+        # 从文件中加载当前 modality 的均值和方差
+        self.global_mean = np.array(stats[self.modality]["global_mean"])
+        self.global_std = np.array(stats[self.modality]["global_std"])
+
+        return self.global_mean, self.global_std
 
     def get_data(self, file_path):
         sample = self.modality_dataset(file_path,
@@ -131,11 +141,17 @@ class WWADLDatasetTestSingle():
             clip = (clip - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
                    (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
 
-            yield clip, [offset, offset + self.clip_length]
+            data = {
+                self.modality: clip
+            }
+
+            yield data, [offset, offset + self.clip_length]
 
     def dataset(self):
         for file_path, file_name in zip(self.file_path_list, self.test_file_list):
             yield file_name, self.get_data(file_path)
+
+
 
 if __name__ == '__main__':
     dataset = WWADLDatasetTestSingle('/root/shared-nvme/WWADL', '/root/shared-nvme/dataset/imu_30_3')

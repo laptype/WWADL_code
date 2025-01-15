@@ -61,6 +61,11 @@ class Tester(object):
         else:
             return None  # 如果没有符合条件的文件
 
+    def _to_var(self, data):
+        for key, value in data.items():
+            data[key] = value.unsqueeze(0).cuda()  # Directly move tensor to device
+        return data
+
     def testing(self):
 
         self.model.eval().cuda()  # 切换到 eval 模式，并将模型移到 GPU 上
@@ -74,7 +79,8 @@ class Tester(object):
             res = torch.zeros(self.num_classes, self.top_k, 3)  # 用于存储 Soft-NMS 处理后的 top-k 结果
 
             for clip, segment in data_iterator:
-                clip = clip.unsqueeze(0).cuda()  # 添加 batch 维度，并移动到 GPU
+                clip = self._to_var(clip)
+                # clip = clip.unsqueeze(0).cuda()  # 添加 batch 维度，并移动到 GPU
                 with torch.no_grad():  # 禁用梯度计算
                     output_dict = self.model(clip)  # 模型推理
 

@@ -18,7 +18,7 @@ class WWADL_imu(WWADLBase):
         - 'left pocket': 3
         - 'right pocket': 4
     """
-    def __init__(self, file_path, devices_to_keep=None, new_mapping=None):
+    def __init__(self, file_path, receivers_to_keep=None, new_mapping=None):
         """
         初始化 IMU 数据处理类，并保留指定设备的维度
 
@@ -31,8 +31,8 @@ class WWADL_imu(WWADLBase):
         self.load_data(file_path)
 
         # 如果提供了需要保留的设备列表，则过滤设备维度
-        if devices_to_keep:
-            self.retain_devices(devices_to_keep)
+        if receivers_to_keep:
+            self.retain_devices(receivers_to_keep)
 
         if new_mapping:
             self.mapping_label(new_mapping)

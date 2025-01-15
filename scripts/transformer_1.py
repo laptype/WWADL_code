@@ -25,17 +25,20 @@ if __name__ == '__main__':
 
     day = get_day()
 
+    model = 'TAD_muti_pre'
+    gpu = 0
+
     model_str_list = [
         # model,    batch size,      epoch
-        # ('Transformer', 16, 55, {'layer': 8}),
-        # ('mamba', 16, 55, {'layer': 8}),
+        ('Transformer', 16, 55, {'layer': 8}),
+        ('mamba', 16, 55, {'layer': 8}),
         ('wifiTAD', 16, 55, {}),
     ]
 
     dataset_str_list = [
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
-        ('WWADLDatasetSingle', 'imu_30_3', 30, 'imu'),
+        ('WWADLDatasetMuti', 'all_30_3', (30, 270), 'wifiimu'),
         # ('WWADLDatasetSingle', 'wifi_30_3'),
         # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
     ]
@@ -49,20 +52,24 @@ if __name__ == '__main__':
                 model_set += f'{k}_{v}_'
             config['datetime'] = get_time()
             config["training"]["DDP"]["enable"] = True
-            config["training"]["DDP"]["devices"] = [0]
-
+            config["training"]["DDP"]["devices"] = [gpu]
+            config["model"]['name'] = model
             config["model"]["backbone_config"] = model_config
             config["model"]["backbone_name"] = model_name
-            config["model"]["in_channels"] = channel
+            if len(config) > 1:
+                config["model"]['imu_in_channels'] = channel[0]
+                config["model"]['wifi_in_channels'] = channel[1]
+            else:
+                config["model"]["in_channels"] = channel
             config["model"]["model_set"] = model_set
             config["model"]["modality"] = modality
             config["training"]["lr_rate"] = 4e-05
 
 
-            test_gpu = 0
+            test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'test'
+            tag = f'muti'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)

@@ -2,12 +2,16 @@ import logging
 import importlib
 from dataset.wwadl import WWADLDatasetSingle
 from dataset.wwadl_test import WWADLDatasetTestSingle
+from dataset.wwadl_muti import WWADLDatasetMuti
+from dataset.wwadl_muti_test import WWADLDatasetTestMuti
 
 logger = logging.getLogger(__name__)
 
 def init_dataset(config: dict):
     if config['dataset']['dataset_name'] == 'WWADLDatasetSingle':
-        dataset = WWADLDatasetSingle(config['path']['dataset_path'], split='train')
+        dataset = WWADLDatasetSingle(config['path']['dataset_path'], split='train', modality=config["model"]["modality"])
+    elif config['dataset']['dataset_name'] == 'WWADLDatasetMuti':
+        dataset = WWADLDatasetMuti(config['path']['dataset_path'])
     else:
         raise ValueError(f"Unsupported dataset name: {config['dataset']['dataset_name']}. "
                          "Please check the configuration.")
@@ -23,7 +27,9 @@ def init_dataset(config: dict):
 
 def init_test_dataset(config: dict):
     if config['dataset']['dataset_name'] == 'WWADLDatasetSingle':
-        dataset = WWADLDatasetTestSingle(config)
+        dataset = WWADLDatasetTestSingle(config, modality=config["model"]["modality"])
+    elif config['dataset']['dataset_name'] == 'WWADLDatasetMuti':
+        dataset = WWADLDatasetTestMuti(config)
     else:
         raise ValueError(f"Unsupported dataset name: {config['dataset']['dataset_name']}. "
                          "Please check the configuration.")

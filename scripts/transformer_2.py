@@ -21,48 +21,60 @@ from global_config import get_basic_config
 config = get_basic_config()
 
 
-
 if __name__ == '__main__':
 
     day = get_day()
 
+    model = 'TAD_single'
+    gpu = 1
+
     model_str_list = [
         # model,    batch size,      epoch
-        ('Transformer', 32, 55),
-        # ('WifiMamba', 16, 55),
-        # ('wifiTAD', 16, 55)
+        # ('Transformer', 16, 55, {'layer': 8}),
+        # ('mamba', 16, 55, {'layer': 8}),
+        ('wifiTAD', 16, 55, {}),
     ]
 
     dataset_str_list = [
-        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-12'),
-        ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
+
+        ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
+        ('WWADLDatasetSingle', 'all_30_3', 30, 'imu'),
+
     ]
 
     for dataset_str in dataset_str_list:
-        dataset_name, dataset, model_set = dataset_str
+        dataset_name, dataset, channel, modality = dataset_str
         for model_str in model_str_list:
-            model_name, batch_size, epoch = model_str
-
+            model_name, batch_size, epoch, model_config = model_str
+            model_set = ''
+            for k, v in model_config.items():
+                model_set += f'{k}_{v}_'
             config['datetime'] = get_time()
-            config["training"]["DDP"]["enable"] = True
-            config["training"]["DDP"]["devices"] = [1]
 
-            config["model"]["model_set"] = model_set
+            config["model"]['name'] = model
+            config["model"]["backbone_config"] = model_config
             config["model"]["backbone_name"] = model_name
-
+            if isinstance(channel, tuple):
+                config["model"]['imu_in_channels'] = channel[0]
+                config["model"]['wifi_in_channels'] = channel[1]
+            else:
+                config["model"]["in_channels"] = channel
+            config["model"]["model_set"] = model_set
+            config["model"]["modality"] = modality
             config["training"]["lr_rate"] = 4e-05
 
-            test_gpu = 1
+            config["training"]["DDP"]["enable"] = True
+            config["training"]["DDP"]["devices"] = [gpu]
+            test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'transformer_imu'
+            tag = f'single'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
             config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
 
-            config['dataset']['dataset_name'] = os.path.join(dataset_name)
+            config['dataset']['dataset_name'] = dataset_name
             config['dataset']['clip_length'] = 1500
 
             config["training"]['num_epoch'] = epoch

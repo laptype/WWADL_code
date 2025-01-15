@@ -8,6 +8,9 @@ class TAD_single_Config(Config):
         self.num_classes = 34
         self.input_length = 2048
         self.in_channels = 30
+        self.out_channels = 512
+        self.wifi_in_channels = 270
+        self.imu_in_channels = 30
         self.priors = 128
         self.backbone_name = 'mamba'
         self.backbone_config = None
