@@ -2,7 +2,7 @@ import torch
 import torch.nn.init as init
 import torch.nn as nn
 from utils.basic_config import Config
-from model.mamba.necks import FPNIdentity, FPN1D
+from model.mamba.necks import FPNIdentity
 from model.TAD.embedding import Embedding
 from model.TAD.head import PredictionHead
 from model.TAD.module import ScaleExp
@@ -37,7 +37,7 @@ class Transformer_config(Config):
         self.n_head = 8
         self.n_embd_ks = 3  # 卷积核大小
         self.arch = (2, layer, 4)  # 卷积层结构：基础卷积、stem 卷积、branch 卷积
-        print(f'self.arch: {self.arch}')
+        # print(f'self.arch: {self.arch}')
         self.max_len = 256
         # window size for self attention; <=1 to use full seq (ie global attention)
         n_mha_win_size = -1
@@ -143,19 +143,6 @@ class Transformer(nn.Module):
         # x: (B, C, 2048)
         B, C, L = x.size()
         x = self.embedding(x)
-        # x: (B, 512, 256)
-
-        # resnet TODO 不用这个试试, stride 改成 2
-        '''
-            1. x = self.embedding(x, stride=2)
-            2. vit
-                x = self._pickup_patching(x)    # 16, 63, 1440
-                x = self.embedding(x)   # 16 63 512
-        '''
-        # for i in range(len(self.skip_tsse)):
-        #     x = self.skip_tsse[i](x)
-
-        # x: (B, 512, 256)
 
         B, C, L = x.size()
         # Step 2: Generate Mask (All True for fixed length)

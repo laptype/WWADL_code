@@ -28,8 +28,9 @@ def load_setting(url: str)->dict:
         data = json.load(f)
         return data
 
-def write_setting(data, save_path=''):
+def write_setting(data):
     # path = os.path.join(save_path, 'setting.json')
+    save_path = os.path.join(data['path']['result_path'], 'setting.json')
     with open(save_path, "w") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
@@ -98,4 +99,4 @@ class Setting():
 
     def update(self, config:dict):
         self.config = config
-        write_setting(config, self.url)
+        write_setting(config)

@@ -28,10 +28,9 @@
         }
     },
     "model": {
+        "name": "TAD_single",
         "backbone_name": "wifiTAD",
-        "head_name": "",
-        "strategy_name": "TAD",
-        "model_set": "34_2048_30_0"
+        "modality": "imu"
     },
     "training": {
         "train_batch_size": 32,

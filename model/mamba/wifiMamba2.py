@@ -1,18 +1,13 @@
 import torch
 import torch.nn as nn
-import numpy as np
-from torch.nn import functional as F
 import torch.nn.init as init
 from model.mamba.backbones import MambaBackbone
-from model.mamba.necks import FPNIdentity, FPN1D
+from model.mamba.necks import FPNIdentity
 from model.TAD.embedding import Embedding
-from model.mamba.loc_generators import PointGenerator
 from utils.basic_config import Config
 from model.mamba.head import PtTransformerClsHead, PtTransformerRegHead
-from model.mamba.downsample import Downsample
 from model.TAD.head import PredictionHead
 from model.TAD.module import ScaleExp
-from model.TAD.backbone import TSSE, LSREF
 from model.models import register_model, register_model_config
 
 @register_model_config('WifiMambaSkip')

@@ -1,6 +1,6 @@
 
 from dataset.modality.base import WWADLBase
-from dataset.modality.h5 import load_h5
+from utils.h5 import load_h5
 
 class WWADL_wifi(WWADLBase):
     """

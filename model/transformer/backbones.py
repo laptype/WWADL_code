@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from model.transformer.blocks import (get_sinusoid_encoding, TransformerBlock, MaskedConv1D,
-                     ConvBlock, LayerNorm)
+                                      LayerNorm)
 
 # @register_backbone("convTransformer")
 class ConvTransformerBackbone(nn.Module):

@@ -28,6 +28,12 @@ def register_hooks(model):
         if not isinstance(module, (nn.Sequential, nn.ModuleList, nn.Identity)):
             module.register_forward_hook(forward_hook(name))
 
+def _to_var(data: dict, device):
+    for key, value in data.items():
+        data[key] = value.to(device)  # Directly move tensor to device
+    return data
+
+
 def forward_hook(module_name):
     """
     钩子函数，用于检查输出是否合法。
@@ -155,7 +161,8 @@ class Trainer(object):
                                                          self.lr_rate_adjust_factor)
 
     def _train_one_step(self, data, targets):
-        data = data.to(self.device)  # 确保输入数据在正确的设备上
+        data = _to_var(data, self.device)
+        # data = data.to(self.device)  # 确保输入数据在正确的设备上
         targets = [t.to(self.device) for t in targets]
         self.optimizer.zero_grad()
 

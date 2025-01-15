@@ -16,8 +16,9 @@ os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" 
 
 
 from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config
-from global_config import config
+from global_config import get_basic_config
 
+config = get_basic_config()
 
 
 if __name__ == '__main__':
@@ -26,48 +27,54 @@ if __name__ == '__main__':
 
     model_str_list = [
         # model,    batch size,      epoch
-        ('Transformer', 32, 55),
-        # ('WifiMamba', 16, 55),
-        # ('wifiTAD', 16, 55)
+        # ('Transformer', 16, 55, {'layer': 8}),
+        # ('mamba', 16, 55, {'layer': 8}),
+        ('wifiTAD', 16, 55, {}),
     ]
 
     dataset_str_list = [
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
-        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-12'),
-        ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_l-8'),
+        # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
+        ('WWADLDatasetSingle', 'imu_30_3', 30, 'imu'),
+        # ('WWADLDatasetSingle', 'wifi_30_3'),
         # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
     ]
 
     for dataset_str in dataset_str_list:
-        dataset_name, dataset, model_set = dataset_str
+        dataset_name, dataset, channel, modality = dataset_str
         for model_str in model_str_list:
-            model_name, batch_size, epoch = model_str
-
+            model_name, batch_size, epoch, model_config = model_str
+            model_set = ''
+            for k, v in model_config.items():
+                model_set += f'{k}_{v}_'
             config['datetime'] = get_time()
             config["training"]["DDP"]["enable"] = True
             config["training"]["DDP"]["devices"] = [0]
 
-            config["model"]["model_set"] = model_set
+            config["model"]["backbone_config"] = model_config
             config["model"]["backbone_name"] = model_name
-
+            config["model"]["in_channels"] = channel
+            config["model"]["model_set"] = model_set
+            config["model"]["modality"] = modality
             config["training"]["lr_rate"] = 4e-05
+
 
             test_gpu = 0
 
             # TAG ===============================================================================================
-            tag = f'transformer_wifi'
+            tag = f'test'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
             config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
 
-            config['dataset']['dataset_name'] = os.path.join(dataset_name)
+            config['dataset']['dataset_name'] = dataset_name
             config['dataset']['clip_length'] = 1500
 
             config["training"]['num_epoch'] = epoch
             config["training"]['train_batch_size'] = batch_size
 
-            write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
+            write_setting(config)
 
             # TRAIN =============================================================================================
             run = Run_config(config, 'train')
@@ -89,7 +96,7 @@ if __name__ == '__main__':
             # 检查训练命令是否正常结束
             if train_process.returncode == 0:  # 正常结束返回 0
                 config['endtime'] = get_time()
-                write_setting(config, os.path.join(config['path']['result_path'], 'setting.json'))
+                write_setting(config)
 
                 # TEST ==========================================================================================
                 test_command = (

@@ -138,7 +138,6 @@ class wifitad(nn.Module):
     @staticmethod
     def weight_init(m):
         """ 初始化权重方法，使用 Xavier 和 He 初始化 """
-
         def glorot_uniform_(tensor):
             fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(tensor)
             scale = 1.0

@@ -168,20 +168,32 @@ class WWADLDatasetSingle(Dataset):
         # 将类别部分（最后一列）单独转换为整数
         label[:, -1] = label[:, -1].to(torch.long)  # 或者直接使用 label[:, -1] = label[:, -1].int()
 
-        return sample, label
+        data = {
+            self.modality: sample
+        }
+
+        return data, label
 
 def detection_collate(batch):
-    clips = []
+    clips = {key: [] for key in batch[0][0].keys()}
     targets = []
     for sample in batch:
-        clips.append(sample[0])
+        data_dict = sample[0]  # Extract the data dictionary
         target = sample[1]
+
+        # Stack each modality separately
+        for key in data_dict.keys():
+            clips[key].append(data_dict[key])
 
         # 将类别部分单独转换为整数
         target[:, -1] = target[:, -1].to(torch.long)
-
         targets.append(target)
-    return torch.stack(clips, 0), targets
+
+    # Stack each modality in the clips dictionary
+    for key in clips.keys():
+        clips[key] = torch.stack(clips[key], 0)
+
+    return clips, targets
 
 if __name__ == '__main__':
 

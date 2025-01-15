@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from model.TAD.module import Unit1D
 
+import torch.nn.init as init
+
 class Tower(nn.Module):
     def __init__(self, out_channels, layer):
         super().__init__()
@@ -73,6 +75,21 @@ class loc_head(nn.Module):
         x = self.loc(x)
         return x
 
+def init_weights(module):
+    """
+    Initialize weights for different layers in the model.
+    """
+    if isinstance(module, nn.Conv1d):  # For Conv1d layers (Unit1D is likely based on Conv1d)
+        init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')  # He initialization for ReLU
+        if module.bias is not None:
+            init.zeros_(module.bias)  # Initialize biases to zero
+    elif isinstance(module, nn.Linear):  # For Linear layers, if there are any
+        init.xavier_normal_(module.weight)  # Xavier initialization for Linear layers
+        if module.bias is not None:
+            init.zeros_(module.bias)
+    elif isinstance(module, nn.GroupNorm):  # GroupNorm layers
+        init.ones_(module.weight)  # Initialize scale to 1
+        init.zeros_(module.bias)   # Initialize bias to 0
 
 class PredictionHead(nn.Module):
     def __init__(self):
@@ -82,6 +99,9 @@ class PredictionHead(nn.Module):
         
         self.loc_head = loc_head()
         self.conf_head = conf_head()
+
+        # Apply the weight initialization to all layers in the module
+        self.apply(init_weights)
         
     def forward(self, x):
         # 获取特征
