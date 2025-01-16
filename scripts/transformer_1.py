@@ -47,9 +47,9 @@ if __name__ == '__main__':
         dataset_name, dataset, channel, modality = dataset_str
         for model_str in model_str_list:
             model_name, batch_size, epoch, model_config = model_str
-            model_set = ''
+            model_set = model_name
             for k, v in model_config.items():
-                model_set += f'{k}_{v}_'
+                model_set += f'_{k}_{v}'
             config['datetime'] = get_time()
             config["training"]["DDP"]["enable"] = True
             config["training"]["DDP"]["devices"] = [gpu]

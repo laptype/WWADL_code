@@ -6,6 +6,8 @@ class WWADLDatasetTestMuti():
     def __init__(self, config):
         self.imu_dataset = WWADLDatasetTestSingle(config, 'imu')
         self.wifi_dataset = WWADLDatasetTestSingle(config, 'wifi')
+        self.eval_gt = self.imu_dataset.eval_gt
+        self.id_to_action = self.imu_dataset.id_to_action
 
     def iter_data(self, imu_data_iter, wifi_data_iter):
         """
@@ -29,7 +31,7 @@ class WWADLDatasetTestMuti():
 
         for (imu_path, imu_name), (wifi_path, wifi_name) in zip(imu_files, wifi_files):
             # 打印文件路径和名称（便于调试）
-            print(imu_path, imu_name, wifi_path, wifi_name)
+            # print(imu_path, imu_name, wifi_path, wifi_name)
 
             # 确保文件名一致
             assert imu_name == wifi_name, f"File name mismatch: {imu_name} != {wifi_name}"
