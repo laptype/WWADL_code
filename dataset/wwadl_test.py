@@ -51,12 +51,12 @@ class WWADLDatasetTestSingle():
         ]
 
         # 设置接收器过滤规则和新映射
-        self.receivers_to_keep = self.info.get('receivers_to_keep', {
+        self.receivers_to_keep = self.info['segment_info'].get('receivers_to_keep', {
             "imu": None,
             "wifi": None,
             "airpods": None
         })
-        self.new_mapping = self.info.get('new_mapping', None)
+        self.new_mapping = self.info['segment_info'].get('new_mapping', None)
 
         # 定义模态数据集映射
         self.modality_dataset_map = {
@@ -79,7 +79,7 @@ class WWADLDatasetTestSingle():
         self.global_mean, self.global_std = self.load_global_stats()
 
         # 初始化动作ID到动作映射
-        self.id_to_action = self.info.get('id2action', id_to_action)
+        self.id_to_action = self.info['segment_info'].get('id2action', id_to_action)
 
 
     def load_global_stats(self):

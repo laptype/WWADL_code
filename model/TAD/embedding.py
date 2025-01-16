@@ -63,7 +63,7 @@ class DatawithoutPOSEmbedding(nn.Module):
         return self.dropout(x)
     
 class Embedding(nn.Module):
-    def __init__(self, in_channels, stride=1):
+    def __init__(self, in_channels, out_channels=512, stride=1):
         super(Embedding, self).__init__()
         self.embedding = nn.Sequential(
             nn.Conv1d(in_channels, 128, kernel_size=3, stride=stride, padding=1, bias=True),

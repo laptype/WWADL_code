@@ -23,7 +23,7 @@ class Tester(object):
         self.checkpoint_path = config['path']['result_path']
 
         self.clip_length = config['dataset']['clip_length']
-        self.num_classes = config['dataset']['num_classes']
+        self.num_classes = config['model']['num_classes']
 
         self.top_k = config['testing']['top_k']
         self.conf_thresh = config['testing']['conf_thresh']
@@ -32,6 +32,7 @@ class Tester(object):
 
         self.eval_gt = test_dataset.eval_gt
         self.id_to_action = test_dataset.id_to_action
+        print(self.id_to_action)
 
         if pt_file_name is None:
             pt_file_name = self.get_latest_checkpoint()

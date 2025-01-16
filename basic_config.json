@@ -19,7 +19,7 @@
     "dataset": {
         "dataset_name": "WWADLDatasetSingle",
         "dataset_info": {},
-        "num_classes": 34,
+        "num_classes": 30,
         "clip_length": 1500,
         "data_length": 2048,
         "in_channels": {

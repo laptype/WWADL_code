@@ -30,9 +30,9 @@ if __name__ == '__main__':
 
     model_str_list = [
         # model,    batch size,      epoch
-        ('Transformer', 16, 55, {'layer': 8}),
+        # ('Transformer', 16, 55, {'layer': 8}),
         ('mamba', 16, 55, {'layer': 8}),
-        ('wifiTAD', 16, 55, {}),
+        # ('wifiTAD', 16, 55, {}),
     ]
 
     dataset_str_list = [
@@ -53,10 +53,12 @@ if __name__ == '__main__':
             config['datetime'] = get_time()
             config["training"]["DDP"]["enable"] = True
             config["training"]["DDP"]["devices"] = [gpu]
+            config["model"]['num_classes'] = 30
+            config["dataset"]['num_classes'] = 30
             config["model"]['name'] = model
             config["model"]["backbone_config"] = model_config
             config["model"]["backbone_name"] = model_name
-            if len(config) > 1:
+            if isinstance(channel, tuple):
                 config["model"]['imu_in_channels'] = channel[0]
                 config["model"]['wifi_in_channels'] = channel[1]
             else:
@@ -69,7 +71,7 @@ if __name__ == '__main__':
             test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'muti'
+            tag = f'muti_mamba'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)

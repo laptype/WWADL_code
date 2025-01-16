@@ -27,7 +27,7 @@ class ClsLocHead(nn.Module):
         self.loc_heads = nn.ModuleList()
         for i in range(head_layer):
             self.loc_heads.append(ScaleExp())
-        self.PredictionHead = PredictionHead()  # Assuming PredictionHead is defined elsewhere
+        self.PredictionHead = PredictionHead(num_classes=num_classes)  # Assuming PredictionHead is defined elsewhere
         # Apply weight initialization to all submodules
         self.apply(init_weights)
 

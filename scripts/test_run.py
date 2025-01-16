@@ -26,7 +26,8 @@ test_model_list = [
     # '/root/shared-nvme/code_result/result/25_01-10/test2/WWADLDatasetSingle_imu_30_3_34_2048_30_0',
     # '/root/shared-nvme/code_result/result/25_01-10/test2/WWADLDatasetSingle_wifi_30_3_34_2048_270_0',
     # '/root/shared-nvme/code_result/result/25_01-12/mambaimu_head_layer/WWADLDatasetSingle_imu_30_3_34_2048_30_l-12',
-    '/root/shared-nvme/code_result/result/25_01-16/muti/WWADLDatasetMuti_all_30_3_layer_8_'
+    # '/root/shared-nvme/code_result/result/25_01-16/muti/WWADLDatasetMuti_all_30_3_layer_8_',
+    '/root/shared-nvme/code_result/result/25_01-16/single/WWADLDatasetSingle_all_30_3_'
 ]
 
 
@@ -39,8 +40,8 @@ for test_model_path in test_model_list:
 
     test_gpu = 1
 
-    config['testing']['pt_file_name'] = 'Transformer_layer_8_-final'
-    config['model']['backbone_name'] = 'Transformer'
+    # config['testing']['pt_file_name'] = 'Transformer_layer_8_-final'
+    # config['model']['backbone_name'] = 'Transformer'
 
     write_setting(config)
 

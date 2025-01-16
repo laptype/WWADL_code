@@ -17,7 +17,7 @@ class TAD_single(nn.Module):
         if config.embed_type == 'Norm':
             self.embedding = Embedding(config.in_channels, stride=config.embedding_stride)
         else:
-            self.embedding = TADEmbedding(config.in_channels, layer=3, input_length=config.input_length)
+            self.embedding = TADEmbedding(config.in_channels, out_channels=512, layer=3, input_length=config.input_length)
 
         logger.info(f'load {config.embed_type} embedding')
         logger.info(f'load {config.backbone_name}')
@@ -37,6 +37,7 @@ class TAD_single(nn.Module):
     def forward(self, input):
         x = input[self.modality]
         B, C, L = x.size()
+
         x = self.embedding(x)
         feats = self.backbone(x)
 

@@ -114,7 +114,7 @@ class Trainer(object):
         self.num_epoch = training_config['num_epoch']
 
         # loss setting -----------------------------------------------------------
-        self.loss = MultiSegmentLoss(num_classes=config['dataset']['num_classes'], clip_length=config['dataset']['clip_length'])
+        self.loss = MultiSegmentLoss(num_classes=config['model']['num_classes'], clip_length=config['dataset']['clip_length'])
         self.lw = config['loss']['lw']
         self.cw = config['loss']['cw']
 

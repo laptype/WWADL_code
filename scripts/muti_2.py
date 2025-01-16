@@ -31,15 +31,17 @@ if __name__ == '__main__':
     model_str_list = [
         # model,    batch size,      epoch
         # ('Transformer', 16, 55, {'layer': 8}),
-        # ('mamba', 16, 55, {'layer': 8}),
-        ('wifiTAD', 16, 55, {}),
+        ('mamba', 16, 55, {'layer': 8}),
+        # ('wifiTAD', 16, 55, {}),
     ]
 
     dataset_str_list = [
-
+        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
+        # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
         ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
-        ('WWADLDatasetSingle', 'all_30_3', 30, 'imu'),
-
+        # ('WWADLDatasetSingle', 'all_30_3', 30, 'imu'),
+        # ('WWADLDatasetSingle', 'wifi_30_3'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
     ]
 
     for dataset_str in dataset_str_list:
@@ -50,7 +52,10 @@ if __name__ == '__main__':
             for k, v in model_config.items():
                 model_set += f'_{k}_{v}'
             config['datetime'] = get_time()
-
+            config["training"]["DDP"]["enable"] = True
+            config["training"]["DDP"]["devices"] = [gpu]
+            config["model"]['num_classes'] = 30
+            config["dataset"]['num_classes'] = 30
             config["model"]['name'] = model
             config["model"]["backbone_config"] = model_config
             config["model"]["backbone_name"] = model_name
@@ -63,12 +68,11 @@ if __name__ == '__main__':
             config["model"]["modality"] = modality
             config["training"]["lr_rate"] = 4e-05
 
-            config["training"]["DDP"]["enable"] = True
-            config["training"]["DDP"]["devices"] = [gpu]
+
             test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'single'
+            tag = f'single_mamba'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
