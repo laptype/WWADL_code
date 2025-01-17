@@ -28,9 +28,10 @@ test_model_list = [
     # '/root/shared-nvme/code_result/result/25_01-12/mambaimu_head_layer/WWADLDatasetSingle_imu_30_3_34_2048_30_l-12',
     # '/root/shared-nvme/code_result/result/25_01-16/muti/WWADLDatasetMuti_all_30_3_layer_8_',
     # '/root/shared-nvme/code_result/result/25_01-16/single/WWADLDatasetSingle_all_30_3_',
-    '/root/shared-nvme/code_result/result/25_01-16/muti_mamba_imu/WWADLDatasetMuti_all_30_3_mamba_layer_8'
+    # '/root/shared-nvme/code_result/result/25_01-16/muti_mamba_imu/WWADLDatasetMuti_all_30_3_mamba_layer_8'
     # '/root/shared-nvme/code_result/result/25_01-16/muti_mamba/WWADLDatasetMuti_all_30_3_mamba_layer_8',
     # '/root/shared-nvme/code_result/result/25_01-16/single_mamba/WWADLDatasetSingle_all_30_3_mamba_layer_8'
+    '/root/shared-nvme/code_result/result/25_01-17/muti_mamba_wifi/WWADLDatasetMuti_all_30_3_mamba_layer_8'
 ]
 
 
@@ -38,6 +39,9 @@ for test_model_path in test_model_list:
     config = load_setting(os.path.join(test_model_path, 'setting.json'))
 
     config['path']['dataset_root_path'] = '/root/shared-nvme/WWADL'
+    config['path']['dataset_path'] = '/root/shared-nvme/dataset/wifi_30_3'
+    config['dataset']['dataset_name'] = 'WWADLDatasetSingle'
+    config["model"]["modality"] = 'wifi'
 
     run = Run_config(config, 'train')
 

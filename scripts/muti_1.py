@@ -15,7 +15,7 @@ sys.path.append(project_path)
 os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
 
 
-from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config
+from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config, load_setting
 from global_config import get_basic_config
 
 config = get_basic_config()
@@ -104,6 +104,7 @@ if __name__ == '__main__':
 
             # 检查训练命令是否正常结束
             if train_process.returncode == 0:  # 正常结束返回 0
+                config = load_setting(os.path.join(config['path']['result_path'], 'setting.json'))
                 config['endtime'] = get_time()
                 write_setting(config)
 

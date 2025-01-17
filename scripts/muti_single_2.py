@@ -25,6 +25,7 @@ if __name__ == '__main__':
 
     day = get_day()
 
+    # model = 'TAD_muti_wifi'
     model = 'TAD_single'
     gpu = 1
 
@@ -38,8 +39,7 @@ if __name__ == '__main__':
     dataset_str_list = [
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
-        # ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
-        ('WWADLDatasetSingle', 'all_30_3', 30, 'imu'),
+        ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
         # ('WWADLDatasetSingle', 'wifi_30_3'),
         # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
     ]
@@ -72,11 +72,11 @@ if __name__ == '__main__':
             test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'single_mamba'
+            tag = f'muti_mamba_wifi_3'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
-            config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}_{modality}', model_set, tag)
-            config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}_{modality}', model_set, tag)
+            config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
+            config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
 
             config['dataset']['dataset_name'] = dataset_name
             config['dataset']['clip_length'] = 1500

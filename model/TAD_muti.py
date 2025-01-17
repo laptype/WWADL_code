@@ -161,11 +161,11 @@ class TAD_muti_wifi(nn.Module):
         self.num_classes = config.num_classes
 
     def forward(self, input):
-        x_imu = input['imu']
+        # x_imu = input['imu']
         x_wifi = input['wifi']
-        B, C, L = x_imu.size()
+        B, C, L = x_wifi.size()
         # print(x_imu.shape, x_wifi.shape)  torch.Size([4, 30, 2048]) torch.Size([4, 270, 2048])
-        x_imu = self.embedding_imu(x_imu)
+        # x_imu = self.embedding_imu(x_imu)
         x_wifi = self.embedding_wifi(x_wifi)
         # print(x_imu.shape, x_wifi.shape)  torch.Size([4, 512, 256]) torch.Size([4, 512, 256])
         x = x_wifi

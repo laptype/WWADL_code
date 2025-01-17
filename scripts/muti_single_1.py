@@ -15,7 +15,7 @@ sys.path.append(project_path)
 os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
 
 
-from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config
+from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config, load_setting
 from global_config import get_basic_config
 
 config = get_basic_config()
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     dataset_str_list = [
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
-        ('WWADLDatasetMuti', 'all_30_3', (30, 270), 'wifiimu'),
+        ('WWADLDatasetSingle', 'all_30_3', (30, 270), 'wifi'),
         # ('WWADLDatasetSingle', 'wifi_30_3'),
         # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
     ]
@@ -71,7 +71,7 @@ if __name__ == '__main__':
             test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'muti_mamba_wifi'
+            tag = f'muti_mamba_wifi_2'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
@@ -104,6 +104,7 @@ if __name__ == '__main__':
 
             # 检查训练命令是否正常结束
             if train_process.returncode == 0:  # 正常结束返回 0
+                config = load_setting(os.path.join(config['path']['result_path'], 'setting.json'))
                 config['endtime'] = get_time()
                 write_setting(config)
 
