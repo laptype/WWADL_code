@@ -7,7 +7,7 @@
         "basic_path": {
             "project_path": "/root/shared-nvme/code/WWADL_code",
             "python_path": "/root/.conda/envs/mamba/bin/python",
-            "log_path": "/root/shared-nvme/code_result/log",
+            "log_path": "/root/shared-nvme/code_result/result",
             "result_path": "/root/shared-nvme/code_result/result"
         },
         "log_path": {

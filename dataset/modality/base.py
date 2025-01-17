@@ -60,4 +60,7 @@ class WWADLBase():
 
     def mapping_label(self, old_to_new_mapping):
         for i in range(len(self.label)):
-            self.label[i][1] = old_to_new_mapping[self.label[i][1]]
+            try:
+                self.label[i][1] = old_to_new_mapping[str(self.label[i][1])]
+            except:
+                print(self.label[i][1], old_to_new_mapping)

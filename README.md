@@ -35,14 +35,30 @@ conda activate video-mamba-suite
 # install pytorch
 pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
 
+pip install h5py pandas scipy torchinfo
+
 # install requirements
 pip install -r requirement.txt
 
 # install mamba
 cd causal-conv1d
-python setup.py develop
+#python setup.py develop
+CAUSAL_CONV1D_FORCE_BUILD=TRUE pip install .
 cd ..
 cd mamba
 python setup.py develop
+# MAMBA_FORCE_BUILD=TRUE pip install .
 cd ..
+```
+
+```angular2html
+# create environment
+conda create -n video-mamba-suite python=3.9
+conda activate video-mamba-suite
+
+# install pytorch
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+
+cd /root/shared-nvme/causal-conv1d
+CAUSAL_CONV1D_FORCE_BUILD=TRUE pip install .
 ```

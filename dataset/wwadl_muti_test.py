@@ -8,6 +8,7 @@ class WWADLDatasetTestMuti():
         self.wifi_dataset = WWADLDatasetTestSingle(config, 'wifi')
         self.eval_gt = self.imu_dataset.eval_gt
         self.id_to_action = self.imu_dataset.id_to_action
+        print('WWADLDatasetTestMuti')
 
     def iter_data(self, imu_data_iter, wifi_data_iter):
         """

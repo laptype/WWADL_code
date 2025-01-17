@@ -32,6 +32,8 @@ class WWADLDatasetMuti(Dataset):
         wifi_data, wifi_label = self.wifi_dataset[idx]
         imu_data, imu_label = self.imu_dataset[idx]
 
+        # print(wifi_label[0], imu_label[0])
+
         data = {
             'wifi': wifi_data['wifi'],
             'imu': imu_data['imu']
@@ -51,18 +53,26 @@ if __name__ == '__main__':
         test_dataset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=4,
+        num_workers=1,
         collate_fn=detection_collate,
         pin_memory=True,
         drop_last=True
     )
-
+    class_set = {}
     for i, (data_batch, label_batch) in enumerate(train_data_loader):
         # print(f"Batch {i} data shape: {data_batch.shape}")
         # print(f"Batch {i} labels: {len(label_batch)}")
-
-        print(label_batch)
-
-        break
+        # for label in label_batch:
+        #     for ll in label:
+        #         if int(ll[2]) not in class_set:
+        #             class_set[int(ll[2])] = 0
+        #         class_set[int(ll[2])] += 1
+        #         assert ll[2] < 30, "00"
+        if i > 50:
+            break
+        # print(label_batch)
+    # class_set = {8: 2176, 26: 2627, 24: 5569, 19: 514, 0: 1452, 15: 528, 22: 1096, 1: 2935, 6: 1595, 17: 813, 11: 904, 10: 707, 23: 549, 7: 2619, 18: 622, 13: 1207, 20: 1727, 12: 487, 14: 819, 9: 601, 5: 1229, 27: 427, 25: 301, 16: 611, 3: 891, 4: 888, 2: 714, 21: 254, 28: 97, 29: 38}
+    # print(sorted(class_set.items(), key=lambda x: x[0]))
+        # break
 
 

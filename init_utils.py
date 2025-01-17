@@ -27,7 +27,8 @@ def init_dataset(config: dict):
 
 def init_test_dataset(config: dict):
     if config['dataset']['dataset_name'] == 'WWADLDatasetSingle':
-        dataset = WWADLDatasetTestSingle(config, modality=config["model"]["modality"])
+        # dataset = WWADLDatasetTestSingle(config, modality=config["model"]["modality"])
+        dataset = WWADLDatasetTestMuti(config)
     elif config['dataset']['dataset_name'] == 'WWADLDatasetMuti':
         dataset = WWADLDatasetTestMuti(config)
     else:

@@ -31,11 +31,14 @@ class Tester(object):
         self.nms_sigma = config['testing']['nms_sigma']
 
         self.eval_gt = test_dataset.eval_gt
+        # self.eval_gt = '/root/shared-nvme/dataset/all_30_3/imutrain_annotations.json'
         self.id_to_action = test_dataset.id_to_action
         print(self.id_to_action)
 
         if pt_file_name is None:
             pt_file_name = self.get_latest_checkpoint()
+
+        print(pt_file_name)
 
         self.model.load_state_dict(torch.load(os.path.join(self.checkpoint_path, pt_file_name)))  # 加载模型权重
 
@@ -44,6 +47,7 @@ class Tester(object):
     def get_latest_checkpoint(self):
         # 获取目录中的所有文件
         all_files = os.listdir(self.checkpoint_path)
+        print(all_files)
         # 正则表达式匹配文件名格式
         pattern = re.compile(r".*-epoch-(\d+)\.pt$")
 
@@ -54,6 +58,8 @@ class Tester(object):
             if match:
                 epoch = int(match.group(1))
                 valid_files.append((file, epoch))
+
+        print(valid_files)
 
         # 找到epoch最大的文件
         if valid_files:
@@ -97,7 +103,7 @@ class Tester(object):
                 conf_scores = conf.clone()  # 复制分类结果
 
                 # 筛选满足置信度阈值的检测结果
-                for cl in range(1, self.num_classes):  # 遍历每个类别
+                for cl in range(0, self.num_classes):  # 遍历每个类别
                     c_mask = conf_scores[cl] > self.conf_thresh  # 筛选置信度高的结果
                     scores = conf_scores[cl][c_mask]
                     if scores.size(0) == 0:  # 如果没有满足阈值的结果，跳过
@@ -110,7 +116,7 @@ class Tester(object):
 
             # 对每个类别应用 Soft-NMS
             sum_count = 0
-            for cl in range(1, self.num_classes):
+            for cl in range(0, self.num_classes):
                 if len(output[cl]) == 0:
                     continue
                 tmp = torch.cat(output[cl], 0)  # 合并所有片段
@@ -124,8 +130,8 @@ class Tester(object):
 
             # 生成 JSON 格式的结果
             proposal_list = []
-            for cl in range(1, self.num_classes):  # 遍历每个类别
-                class_name = self.id_to_action[cl]  # 获取类别名称
+            for cl in range(0, self.num_classes):  # 遍历每个类别
+                class_name = self.id_to_action[str(cl)]  # 获取类别名称
                 tmp = flt[cl].contiguous()
                 tmp = tmp[(tmp[:, 2] > 0).unsqueeze(-1).expand_as(tmp)].view(-1, 3)  # 筛选有效结果
                 if tmp.size(0) == 0:
