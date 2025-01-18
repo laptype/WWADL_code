@@ -1,0 +1,121 @@
+import sys
+import os
+import torch
+import subprocess
+
+# project_path = '/home/lanbo/WWADL/WWADL_code'
+# dataset_root_path = '/data/WWADL/dataset'
+
+# 定义路径
+project_path = '/root/shared-nvme/code/WWADL_code'
+dataset_root_path = '/root/shared-nvme/dataset'
+causal_conv1d_path = '/root/shared-nvme/causal-conv1d'
+mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
+sys.path.append(project_path)
+os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
+
+
+from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config, load_setting
+from global_config import get_basic_config
+
+config = get_basic_config()
+
+
+if __name__ == '__main__':
+
+    day = get_day()
+
+    # model = 'TAD_muti_wifi'
+    model = 'TAD_single'
+    gpu = 0
+
+    model_str_list = [
+        # model,    batch size,      epoch
+        # ('Transformer', 16, 55, {'layer': 8}),
+        ('wifiTAD', 16, 55, {'layer': 8}),
+        # ('wifiTAD', 16, 55, {}),
+    ]
+
+    dataset_str_list = [
+        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
+        # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
+        ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
+        # ('WWADLDatasetSingle', 'wifi_30_3'),
+        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
+    ]
+
+    for dataset_str in dataset_str_list:
+        dataset_name, dataset, channel, modality = dataset_str
+        for model_str in model_str_list:
+            model_name, batch_size, epoch, model_config = model_str
+            model_set = model_name
+            for k, v in model_config.items():
+                model_set += f'_{k}_{v}'
+            config['datetime'] = get_time()
+            config["training"]["DDP"]["enable"] = True
+            config["training"]["DDP"]["devices"] = [gpu]
+            config["model"]['num_classes'] = 30
+            config["dataset"]['num_classes'] = 30
+            config["model"]['name'] = model
+            config["model"]["backbone_config"] = model_config
+            config["model"]["backbone_name"] = model_name
+            if isinstance(channel, tuple):
+                config["model"]['imu_in_channels'] = channel[0]
+                config["model"]['wifi_in_channels'] = channel[1]
+            else:
+                config["model"]["in_channels"] = channel
+            config["model"]["model_set"] = model_set
+            config["model"]["modality"] = modality
+            config["training"]["lr_rate"] = 4e-05
+
+
+            test_gpu = gpu
+
+            # TAG ===============================================================================================
+            tag = f'muti_wifiTAD_wifi_3'
+
+            config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
+            config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
+            config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
+
+            config['dataset']['dataset_name'] = dataset_name
+            config['dataset']['clip_length'] = 1500
+
+            config["training"]['num_epoch'] = epoch
+            config["training"]['train_batch_size'] = batch_size
+
+            write_setting(config)
+
+            # TRAIN =============================================================================================
+            run = Run_config(config, 'train')
+
+            # os.system(
+            #     f"CUDA_VISIBLE_DEVICES={run.ddp_devices} {run.python_path} -m torch.distributed.launch --nproc_per_node {run.nproc_per_node} "
+            #     f"--master_port='29501' --use_env "
+            #     f"{run.main_path} --is_train true --config_path {run.config_path}"
+            # )
+            # TRAIN =============================================================================================
+            train_command = (
+                f"CUDA_VISIBLE_DEVICES={run.ddp_devices} {run.python_path} "
+                f"{run.main_path} --is_train true --config_path {run.config_path}"
+            )
+
+            # 执行训练命令并等待其完成
+            train_process = subprocess.run(train_command, shell=True)
+
+            # 检查训练命令是否正常结束
+            if train_process.returncode == 0:  # 正常结束返回 0
+                config = load_setting(os.path.join(config['path']['result_path'], 'setting.json'))
+                config['endtime'] = get_time()
+                write_setting(config)
+
+                # TEST ==========================================================================================
+                test_command = (
+                    f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
+                    f"{run.main_path} --config_path {run.config_path}"
+                )
+
+                # 启动测试命令
+                subprocess.run(test_command, shell=True)
+            else:
+                print("Training process failed. Test process will not start.")
