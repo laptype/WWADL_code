@@ -11,7 +11,6 @@ project_path = '/root/shared-nvme/code/WWADL_code'
 dataset_root_path = '/root/shared-nvme/dataset'
 causal_conv1d_path = '/root/shared-nvme/causal-conv1d'
 mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
-python_path = '/root/.conda/envs/t1/bin/python'
 sys.path.append(project_path)
 os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
 
@@ -26,21 +25,20 @@ if __name__ == '__main__':
 
     day = get_day()
 
-    # model = 'TAD_muti_add'
-    model = 'TAD_muti_add2'
-    gpu = 0
+    model = 'TAD_single'
+    gpu = 1
 
     model_str_list = [
         # model,    batch size,      epoch
         # ('Transformer', 16, 55, {'layer': 8}),
-        ('mamba', 16, 75, {'layer': 8}),
+        ('mamba', 16, 55, {'layer': 8}),
         # ('wifiTAD', 16, 55, {}),
     ]
 
     dataset_str_list = [
         # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
         # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
-        ('WWADLDatasetMuti', 'all_30_3', (30, 270), 'wifiimu'),
+        ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
         # ('WWADLDatasetSingle', 'wifi_30_3'),
         # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
     ]
@@ -73,13 +71,11 @@ if __name__ == '__main__':
             test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'muti_mamba_add2'
+            tag = f'muti_mamba_wifi_118_2'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
             config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
-
-            config['path']['basic_path']['python_path'] = python_path
 
             config['dataset']['dataset_name'] = dataset_name
             config['dataset']['clip_length'] = 1500

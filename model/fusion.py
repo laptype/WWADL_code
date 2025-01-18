@@ -75,6 +75,40 @@ class GatedFusionAdd(nn.Module):
         # output = self.fc(combined_features)  # (B, C, L)
         return combined_features
 
+class GatedFusionAdd2(nn.Module):
+    def __init__(self, hidden_size: int):
+        """
+        使用门控机制的模态融合模块。
+        Args:
+            hidden_size (int): 特征的隐藏维度 (C)。
+        """
+        super(GatedFusionAdd2, self).__init__()
+        # print('hidden_size', hidden_size)
+        self.gate_linear = nn.Linear(hidden_size, hidden_size * 2)  # 1D 卷积等价于线性层
+        self.gate = nn.Sigmoid()  # 门控激活函数
+        self.fc = nn.Linear(hidden_size * 2, hidden_size)  # 融合后特征映射回 hidden_size
+
+    def forward(self, imu_features: torch.Tensor, wifi_features: torch.Tensor) -> torch.Tensor:
+        """
+        前向传播逻辑。
+        Args:
+            imu_features (torch.Tensor): IMU 模态特征，形状 (B, C, L)。
+            wifi_features (torch.Tensor): WiFi 模态特征，形状 (B, C, L)。
+        Returns:
+            torch.Tensor: 融合后的特征，形状 (B, C, L)。
+        """
+        # 计算门控值
+        # print(imu_features.shape, wifi_features.shape)
+        # print(combined_features.shape)
+        gate = self.gate(self.gate_linear(imu_features + wifi_features))
+        combined = torch.cat([imu_features, wifi_features], dim=-1)
+
+        fused_features = gate * combined
+
+        output = self.fc(fused_features)
+
+        return output
+
 class GatedFusionWeight(nn.Module):
     def __init__(self, hidden_size: int):
         """
