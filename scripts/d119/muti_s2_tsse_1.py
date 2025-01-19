@@ -11,6 +11,7 @@ project_path = '/root/shared-nvme/code/WWADL_code'
 dataset_root_path = '/root/shared-nvme/dataset'
 causal_conv1d_path = '/root/shared-nvme/causal-conv1d'
 mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
+python_path = '/root/.conda/envs/t1/bin/python'
 sys.path.append(project_path)
 os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
 
@@ -25,15 +26,17 @@ if __name__ == '__main__':
 
     day = get_day()
 
-    model = 'TAD_single'
+    model = 'TAD_muti_tsse'
     gpu = 0
 
     model_str_list = [
-        ('wifiTAD', 16, 55, {'layer': 8}),
+        ('mamba', 8, 80, {'layer': 8}),
+        ('Transformer', 8, 80, {'layer': 8}),
+        # ('wifiTAD', 16, 55, {}),
     ]
 
     dataset_str_list = [
-        ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
+        ('WWADLDatasetMuti', 'all_30_3', (30, 270), 'wifiimu'),
     ]
 
     for dataset_str in dataset_str_list:
@@ -64,11 +67,13 @@ if __name__ == '__main__':
             test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'muti_wifiTAD_wifi_3'
+            tag = f'muti_m_t'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
             config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
+
+            config['path']['basic_path']['python_path'] = python_path
 
             config['dataset']['dataset_name'] = dataset_name
             config['dataset']['clip_length'] = 1500

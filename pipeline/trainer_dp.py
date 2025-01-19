@@ -68,9 +68,13 @@ class BestModelSaver:
         # 使用最大堆保存模型信息 [(负的metric, model_path), ...]
         self.best_models = []
 
-    def save_model(self, model_state_dict, model_name, metric):
+    def save_model(self, model_state_dict, model_name, metric, is_save=False):
         # 构造保存路径
         model_path = os.path.join(self.check_point_path, f"{model_name}.pt")
+
+        if is_save:
+            torch.save(model_state_dict, model_path)
+            return
 
         # 如果队列未满，直接保存模型
         if len(self.best_models) < self.max_models:
@@ -283,12 +287,17 @@ class Trainer(object):
 
             self.scheduler.step()
 
+            if epoch == 54:
+                saver.save_model(self.model.state_dict(), f"{self.model_info}_55-epoch-{epoch}", cost_val, is_save=True)
+            
             # 保存当前模型
             saver.save_model(self.model.state_dict(), f"{self.model_info}-epoch-{epoch}", cost_val)
 
             self.writer.add_scalar("Train Loss", cost_val, epoch)
             self.writer.add_scalar("loss_loc_val Loss", loss_loc_val, epoch)
             self.writer.add_scalar("loss_conf_val Loss", loss_conf_val, epoch)
+
+
 
         torch.save(self.model.state_dict(),
                    os.path.join(self.check_point_path, '%s-final' % (self.model_info)))

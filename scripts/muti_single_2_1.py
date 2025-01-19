@@ -30,18 +30,11 @@ if __name__ == '__main__':
     gpu = 1
 
     model_str_list = [
-        # model,    batch size,      epoch
-        # ('Transformer', 16, 55, {'layer': 8}),
         ('mamba', 16, 75, {'layer': 8}),
-        # ('wifiTAD', 16, 55, {}),
     ]
 
     dataset_str_list = [
-        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
-        # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
         ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
-        # ('WWADLDatasetSingle', 'wifi_30_3'),
-        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
     ]
 
     for dataset_str in dataset_str_list:

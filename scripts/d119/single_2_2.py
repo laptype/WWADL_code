@@ -26,20 +26,23 @@ if __name__ == '__main__':
     day = get_day()
 
     model = 'TAD_single'
-    gpu = 0
+    gpu = 1
 
     model_str_list = [
-        ('wifiTAD', 16, 55, {'layer': 8}),
+        ('mamba', 16, 80, {'layer': 8}),
+        ('Transformer', 16, 80, {'layer': 8}),
+        ('Transformer', 16, 80, {'layer': 8, 'embed_type': 'Norm'}),
+        ('wifiTAD', 16, 80, {'layer': 8}),
     ]
 
     dataset_str_list = [
-        ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
+        ('WWADLDatasetSingle', 'all_30_3', 30, 'imu'),
     ]
 
     for dataset_str in dataset_str_list:
         dataset_name, dataset, channel, modality = dataset_str
         for model_str in model_str_list:
-            model_name, batch_size, epoch, model_config = model_str
+            model_name, batch_size, epoch, model_config, *others = model_str
             model_set = model_name
             for k, v in model_config.items():
                 model_set += f'_{k}_{v}'
@@ -51,6 +54,10 @@ if __name__ == '__main__':
             config["model"]['name'] = model
             config["model"]["backbone_config"] = model_config
             config["model"]["backbone_name"] = model_name
+
+            if 'embed_type' in model_config:
+                config['model']['embed_type'] = model_config['embed_type']
+
             if isinstance(channel, tuple):
                 config["model"]['imu_in_channels'] = channel[0]
                 config["model"]['wifi_in_channels'] = channel[1]
@@ -64,7 +71,7 @@ if __name__ == '__main__':
             test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'muti_wifiTAD_wifi_3'
+            tag = f'single_imu'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
             config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
