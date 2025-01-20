@@ -2,7 +2,7 @@ import os
 import json
 
 
-def get_basic_config(basic_config_path = '/root/shared-nvme/code/WWADL_code/basic_config.json'):
+def get_basic_config(basic_config_path = '/root/shared-nvme/code/WWADL_code_mac/basic_config.json'):
     with open(basic_config_path, 'r') as json_file:
         config = json.load(json_file)
     return config

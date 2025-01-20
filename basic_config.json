@@ -5,7 +5,7 @@
         "dataset_path": "/root/shared-nvme/dataset/imu_30_3",
         "dataset_root_path": "/root/shared-nvme/WWADL",
         "basic_path": {
-            "project_path": "/root/shared-nvme/code/WWADL_code",
+            "project_path": "/root/shared-nvme/code/WWADL_code_mac",
             "python_path": "/root/.conda/envs/mamba/bin/python",
             "log_path": "/root/shared-nvme/code_result/result",
             "result_path": "/root/shared-nvme/code_result/result"

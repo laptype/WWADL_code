@@ -7,7 +7,7 @@ import subprocess
 # dataset_root_path = '/data/WWADL/dataset'
 
 # 定义路径
-project_path = '/root/shared-nvme/code/WWADL_code'
+project_path = '/root/shared-nvme/code/WWADL_code_mac'
 dataset_root_path = '/root/shared-nvme/dataset'
 causal_conv1d_path = '/root/shared-nvme/causal-conv1d'
 mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
