@@ -299,11 +299,11 @@ class Trainer(object):
 
 
 
-        torch.save(self.model.state_dict(),
-                   os.path.join(self.check_point_path, '%s-final' % (self.model_info)))
+        # torch.save(self.model.state_dict(),
+        #            os.path.join(self.check_point_path, '%s-final' % (self.model_info)))
 
-        if os.path.exists(os.path.join(self.check_point_path, "initial_weights.pt")) is True:
-            os.remove(os.path.join(self.check_point_path, "initial_weights.pt"))
+        # if os.path.exists(os.path.join(self.check_point_path, "initial_weights.pt")) is True:
+        #     os.remove(os.path.join(self.check_point_path, "initial_weights.pt"))
 
 
     def set_seed(self, seed):

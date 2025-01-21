@@ -29,9 +29,9 @@ if __name__ == '__main__':
     gpu = 0
 
     model_str_list = [
-        ('mamba', 16, 80, {'layer': 8}),
-        ('Transformer', 16, 80, {'layer': 8}),
-        ('Transformer', 16, 80, {'layer': 8, 'embed_type': 'Norm'}),
+        # ('mamba', 16, 80, {'layer': 8}),
+        # ('Transformer', 16, 80, {'layer': 8}),
+        # ('Transformer', 16, 80, {'layer': 8, 'embed_type': 'Norm'}),
         ('wifiTAD', 16, 80, {'layer': 8}),
     ]
 
