@@ -1,6 +1,6 @@
 {
     "datetime": "2025_01-08_22:23:51",
-    "endtime": "2025_05-17_21:52:58",
+    "endtime": "None",
     "path": {
         "dataset_path": "/root/shared-nvme/dataset/imu_30_3",
         "dataset_root_path": "/root/shared-nvme/WWADL",
