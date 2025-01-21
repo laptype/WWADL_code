@@ -15,9 +15,7 @@ class WWADLDatasetTestMuti():
         生成器：并行迭代 IMU 数据和 WiFi 数据，输出合并后的数据字典和标签。
         """
         for imu_data, wifi_data in zip(imu_data_iter, wifi_data_iter):
-
-            print(imu_data[1], wifi_data[1])
-
+            # print(imu_data[1], wifi_data[1])
             data = {
                 'imu': imu_data[0]['imu'],
                 'wifi': wifi_data[0]['wifi']
