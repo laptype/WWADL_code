@@ -30,7 +30,8 @@ if __name__ == '__main__':
     gpu = 0
 
     model_str_list = [
-        ('TriDet', 8, 80, {}),
+        ('TriDet', 8, 80, {'i': 1}),
+        ('TriDet', 8, 80, {'i': 2})
     ]
 
     dataset_str_list = [

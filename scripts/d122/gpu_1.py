@@ -29,7 +29,8 @@ if __name__ == '__main__':
     gpu = 0
 
     model_str_list = [
-        ('ActionMamba', 16, 80, {'layer': 8}),
+        ('ActionMamba', 16, 80, {'layer': 8, 'i': 1}),
+        ('ActionMamba', 16, 80, {'layer': 8, 'i': 2}),
     ]
 
     dataset_str_list = [

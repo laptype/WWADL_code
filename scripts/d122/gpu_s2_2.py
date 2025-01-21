@@ -30,7 +30,8 @@ if __name__ == '__main__':
     gpu = 1
 
     model_str_list = [
-        ('TemporalMaxer', 16, 80, {}),
+        ('TemporalMaxer', 16, 80, {'i': 1}),
+        ('TemporalMaxer', 16, 80, {'i': 2})
     ]
 
     dataset_str_list = [
