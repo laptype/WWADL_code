@@ -7,6 +7,7 @@ from model.mamba.backbones import MambaBackbone
 from model.transformer.backbones import ConvTransformerBackbone
 from model.TAD.backbone import TSSE, LSREF
 from model.mamba.necks import FPNIdentity
+from model.TriDet.backbones import SGPBackbone
 from model.models import register_backbone_config, register_backbone
 
 @register_backbone_config('mamba')
@@ -198,3 +199,89 @@ class WifiTAD(nn.Module):
             out_feats.append(out)
 
         return out_feats
+    
+@register_backbone_config('TriDet')
+class TriDet_config(Config):
+    def __init__(self, cfg = None):
+        # Backbone 配置
+        self.n_embd = 512
+        self.n_head = 8
+        self.n_embd_ks = 3  # 卷积核大小
+        self.max_len = 256
+        # window size for self attention; <=1 to use full seq (ie global attention)
+        n_sgp_win_size = 1
+        self.scale_factor = 2
+        self.with_ln= True
+        self.attn_pdrop = 0.0
+        self.proj_pdrop = 0.4
+        self.path_pdrop = 0.1
+        self.use_abs_pe = False
+        self.use_rel_pe = False
+
+        self.priors = 256  # 初始特征点数量
+        self.layer_skip = 3
+        self.layer = 4
+        self.sgp_mlp_dim = 768
+        self.downsample_type = 'max'
+        self.init_conv_vars = 0
+        self.k = 4
+
+        self.update(cfg)    # update ---------------------------------------------
+        self.arch = (2, self.layer, 4)  # 卷积层结构：基础卷积、stem 卷积、branch 卷积
+        self.sgp_win_size = [n_sgp_win_size] * (1 + self.arch[-1])
+        print(f'self.arch: {self.arch}')
+
+@register_backbone('TriDet')
+class TriDet(nn.Module):
+    def __init__(self, config: TriDet_config):
+        super(TriDet, self).__init__()
+
+        # Transformer Backbone
+        self.backbone = SGPBackbone(
+            n_in=512,
+            n_embd=config.n_embd,
+            sgp_mlp_dim=config.sgp_mlp_dim,
+            n_embd_ks=config.n_embd_ks,
+            max_len=config.max_len,
+            arch=config.arch,
+            scale_factor=config.scale_factor,
+            with_ln=config.with_ln,
+            path_pdrop=config.path_pdrop,
+            downsample_type=config.downsample_type,
+            sgp_win_size=config.sgp_win_size,
+            use_abs_pe=config.use_abs_pe,
+            k=config.k,
+            init_conv_vars=config.init_conv_vars
+        )
+
+        # Neck: FPNIdentity
+        self.neck = FPNIdentity(
+            in_channels=[config.n_embd] * (config.arch[-1] + 1),  # 输入特征通道，假设每一层的输出特征通道一致
+            out_channel=config.n_embd,  # 输出特征通道数
+            scale_factor=config.scale_factor,  # 下采样倍率
+            with_ln=config.with_ln  # 是否使用 LayerNorm
+        )
+
+        # Initialize weights
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        # Initialize neck
+        for m in self.neck.modules():
+            if isinstance(m, nn.Conv1d):
+                init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+        # Initialize LayerNorm
+        for m in self.modules():
+            if isinstance(m, nn.LayerNorm):
+                init.constant_(m.weight, 1)
+                init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        B, C, L = x.size()
+        batched_masks = torch.ones(B, 1, L, dtype=torch.bool).to(x.device)
+        feats, masks = self.backbone(x, batched_masks)
+        fpn_feats, fpn_masks = self.neck(feats, masks)
+
+        return fpn_feats

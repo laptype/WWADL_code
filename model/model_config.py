@@ -36,6 +36,19 @@ class Mamba_config(TAD_single_Config):
         # self.backbone_config.input_length = self.input_length
         self.head_num = backbone_config.arch[-1] + 1
 
+@register_model_config('ActionMamba')
+class ActionMamba_config(TAD_single_Config):
+    def __init__(self, cfg=None):
+        super().__init__()
+        self.priors = 256
+        self.embedding_stride=2
+        self.embed_type = 'Down'
+        self.update(cfg)
+        self.backbone_name = 'mamba'
+        backbone_config = self.init_model_config()
+        # self.backbone_config.input_length = self.input_length
+        self.head_num = backbone_config.arch[-1] + 1
+
 @register_model_config('wifiTAD')
 class WifiTAD_config(TAD_single_Config):
     def __init__(self, cfg=None):
@@ -58,5 +71,29 @@ class Transformer_config(TAD_single_Config):
         self.embedding_stride=2
         self.embed_type = 'TAD'
         self.update(cfg)
+        backbone_config = self.init_model_config()
+        self.head_num = backbone_config.arch[-1] + 1
+
+@register_model_config('ActionFormer')
+class ActionFormer_config(TAD_single_Config):
+    def __init__(self, cfg=None):
+        super().__init__()
+        self.priors = 256
+        self.embedding_stride=2
+        self.embed_type = 'Down'
+        self.update(cfg)
+        self.backbone_name = 'Transformer'
+        backbone_config = self.init_model_config()
+        self.head_num = backbone_config.arch[-1] + 1
+
+@register_model_config('TriDet')
+class TriDet_config(TAD_single_Config):
+    def __init__(self, cfg=None):
+        super().__init__()
+        self.priors = 256
+        self.embedding_stride=2
+        self.embed_type = 'Down'
+        self.update(cfg)
+        self.backbone_name = 'TriDet'
         backbone_config = self.init_model_config()
         self.head_num = backbone_config.arch[-1] + 1
