@@ -21,7 +21,7 @@ if __name__ == '__main__':
         "model": {
             "name": "TAD_muti_none",
             # "backbone_name": "ActionMamba",
-            "backbone_name": "TriDet",
+            "backbone_name": "TemporalMaxer",
             "modality": "imu",
             "in_channels": 30,
             # "embed_type": "Down",
