@@ -150,7 +150,7 @@ class PoolConv(nn.Module):
                         stride=1,
                         use_bias=True,
                         activation_fn=None)
-        self.norm = nn.GroupNorm(32, 512)
+        self.norm = nn.GroupNorm(32, in_channels)
         self.lu = nn.ReLU(inplace=True)
     def forward(self, x):
         y = self.dwconv1(x)
@@ -169,7 +169,7 @@ class ds(nn.Module):
                         stride=2,
                         use_bias=True,
                         activation_fn=None),
-                        nn.GroupNorm(32, 512),
+                        nn.GroupNorm(32, in_channels),
                         nn.ReLU(inplace=True)
                         )
 

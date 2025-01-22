@@ -16,15 +16,15 @@ class TAD_muti_none(nn.Module):
     def __init__(self, config: TAD_single_Config):
         super(TAD_muti_none, self).__init__()
         self.config = config
-        self.embedding_imu = Embedding(config.imu_in_channels, stride=1)
-        self.embedding_wifi = Embedding(config.wifi_in_channels, stride=1)
+        self.embedding_imu = Embedding(config.imu_in_channels, out_channels=config.out_channels, stride=1)
+        self.embedding_wifi = Embedding(config.wifi_in_channels, out_channels=config.out_channels, stride=1)
 
         assert config.embed_type in ['None', 'Down']
 
         if config.embed_type == 'None':
             self.embedding = NoneEmbedding()
         elif config.embed_type == 'Down':
-            self.embedding = Embedding(config.out_channels, stride=2)
+            self.embedding = Embedding(config.out_channels, out_channels=config.out_channels, stride=2)
 
         self.fusion = GatedFusion(hidden_size=config.out_channels)
 
@@ -33,7 +33,7 @@ class TAD_muti_none(nn.Module):
         backbone_config = make_backbone_config(config.backbone_name, cfg=config.backbone_config)
         self.backbone = make_backbone(config.backbone_name, backbone_config)
         self.modality = config.modality
-        self.head = ClsLocHead(num_classes=config.num_classes, head_layer=config.head_num)
+        self.head = ClsLocHead(num_classes=config.num_classes, head_layer=config.head_num, in_channel=config.out_channels)
         self.priors = []
         t = config.priors
         for i in range(config.head_num):

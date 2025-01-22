@@ -92,13 +92,13 @@ def init_weights(module):
         init.zeros_(module.bias)   # Initialize bias to 0
 
 class PredictionHead(nn.Module):
-    def __init__(self, num_classes=34):
+    def __init__(self, in_channel=512, num_classes=34):
         super().__init__()
-        self.loc_tower = Tower(512, 3)
-        self.conf_tower = Tower(512, 3)
+        self.loc_tower = Tower(in_channel, 3)
+        self.conf_tower = Tower(in_channel, 3)
         
-        self.loc_head = loc_head()
-        self.conf_head = conf_head(out_channels=512, num_classes=num_classes)
+        self.loc_head = loc_head(out_channels=in_channel)
+        self.conf_head = conf_head(out_channels=in_channel, num_classes=num_classes)
 
         # Apply the weight initialization to all layers in the module
         self.apply(init_weights)

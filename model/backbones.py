@@ -9,6 +9,7 @@ from model.TAD.backbone import TSSE, LSREF
 from model.mamba.necks import FPNIdentity
 from model.TriDet.backbones import SGPBackbone
 from model.TemporalMaxer.backbones import ConvPoolerBackbone
+from model.Ushape.backbones import UNetBackbone
 from model.models import register_backbone_config, register_backbone
 
 @register_backbone_config('mamba')
@@ -352,3 +353,38 @@ class TemporalMaxer(nn.Module):
         fpn_feats, fpn_masks = self.neck(feats, masks)
 
         return fpn_feats
+    
+@register_backbone_config('Ushape')
+class Ushape_config(Config):
+    def __init__(self, cfg = None):
+        # Backbone 配置
+        self.in_channels = 128
+        self.filters = [128, 256, 512, 1024, 2048, 4096]
+        self.update(cfg)    # update ---------------------------------------------
+
+
+@register_backbone('Ushape')
+class Ushape(nn.Module):
+    def __init__(self, config: Ushape_config):
+        super(Ushape, self).__init__()
+
+        # Transformer Backbone
+        self.backbone = UNetBackbone(
+            in_channels=config.in_channels,
+            filters=config.filters
+        )
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        # Initialize LayerNorm
+        for m in self.modules():
+            if isinstance(m, nn.LayerNorm):
+                init.constant_(m.weight, 1)
+                init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        B, C, L = x.size()
+        # ([4, 512, 256])
+        feats = self.backbone(x)
+        # [torch.Size([4, 64, 256]), torch.Size([4, 64, 256]), torch.Size([4, 64, 256]), torch.Size([4, 64, 256]), torch.Size([4, 64, 256])]
+        return feats

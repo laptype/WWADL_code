@@ -21,13 +21,13 @@ def init_weights(module):
         init.zeros_(module.bias)   # Initialize bias to 0
 
 class ClsLocHead(nn.Module):
-    def __init__(self, num_classes, head_layer):
+    def __init__(self, num_classes, head_layer, in_channel=512):
         super(ClsLocHead, self).__init__()
         self.num_classes = num_classes
         self.loc_heads = nn.ModuleList()
         for i in range(head_layer):
             self.loc_heads.append(ScaleExp())
-        self.PredictionHead = PredictionHead(num_classes=num_classes)  # Assuming PredictionHead is defined elsewhere
+        self.PredictionHead = PredictionHead(in_channel=in_channel, num_classes=num_classes)  # Assuming PredictionHead is defined elsewhere
         # Apply weight initialization to all submodules
         self.apply(init_weights)
 

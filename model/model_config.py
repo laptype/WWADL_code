@@ -109,3 +109,17 @@ class TemporalMaxer_config(TAD_single_Config):
         self.backbone_name = 'TemporalMaxer'
         backbone_config = self.init_model_config()
         self.head_num = backbone_config.arch[-1] + 1
+
+@register_model_config('Ushape')
+class Ushape_config(TAD_single_Config):
+    def __init__(self, cfg=None):
+        super().__init__()
+        self.priors = 256
+        self.embedding_stride=2
+        self.embed_type = 'Down'
+        self.out_channels = 128
+        self.update(cfg)
+        self.backbone_name = 'Ushape'
+        backbone_config = self.init_model_config()
+        self.head_num = 5
+        self.out_channels = backbone_config.in_channels

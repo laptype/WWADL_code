@@ -72,8 +72,8 @@ class Embedding(nn.Module):
             nn.Conv1d(128, 256, kernel_size=3, stride=stride, padding=1, bias=True),
             nn.GroupNorm(32, 256),
             nn.ReLU(inplace=True),
-            nn.Conv1d(256, 512, kernel_size=3, stride=stride, padding=1, bias=True),
-            nn.GroupNorm(32, 512),
+            nn.Conv1d(256, out_channels, kernel_size=3, stride=stride, padding=1, bias=True),
+            nn.GroupNorm(32, out_channels),
             nn.ReLU(inplace=True)
         )
         
