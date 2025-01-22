@@ -7,10 +7,11 @@ import subprocess
 # dataset_root_path = '/data/WWADL/dataset'
 
 # 定义路径
-project_path = '/root/shared-nvme/code/WWADL_code'
+project_path = '/root/shared-nvme/code/WWADL_code_mac'
 dataset_root_path = '/root/shared-nvme/dataset'
 causal_conv1d_path = '/root/shared-nvme/causal-conv1d'
 mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
+python_path = '/root/.conda/envs/t1/bin/python'
 sys.path.append(project_path)
 os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
 
@@ -25,23 +26,16 @@ if __name__ == '__main__':
 
     day = get_day()
 
-    model = 'TAD_single'
-    gpu = 1
+    model = 'TAD_muti_none'
+    gpu = 0
 
     model_str_list = [
-        # model,    batch size,      epoch
-        # ('Transformer', 16, 55, {'layer': 8}),
-        ('mamba', 16, 55, {'layer': 8}),
-        # ('wifiTAD', 16, 55, {}),
+        ('wifiTAD', 8, 80, {'i': 1, 'embed_type': 'None'}),
+        ('wifiTAD', 8, 80, {'i': 1, 'embed_type': 'None'}),
     ]
 
     dataset_str_list = [
-        # ('WWADLDatasetSingle', 'wifi_30_3', '34_2048_270_0'),
-        # ('WWADLDatasetSingle', 'wifi_30_3', 270, 'wifi'),
-        # ('WWADLDatasetSingle', 'all_30_3', 270, 'wifi'),
-        ('WWADLDatasetSingle', 'all_30_3', 30, 'imu'),
-        # ('WWADLDatasetSingle', 'wifi_30_3'),
-        # ('WWADLDatasetSingle', 'imu_30_3', '34_2048_30_l-8'),
+        ('WWADLDatasetMuti', 'all_30_3', (30, 270), 'wifiimu'),
     ]
 
     for dataset_str in dataset_str_list:
@@ -59,6 +53,10 @@ if __name__ == '__main__':
             config["model"]['name'] = model
             config["model"]["backbone_config"] = model_config
             config["model"]["backbone_name"] = model_name
+
+            if 'embed_type' in model_config:
+                config['model']['embed_type'] = model_config['embed_type']
+
             if isinstance(channel, tuple):
                 config["model"]['imu_in_channels'] = channel[0]
                 config["model"]['wifi_in_channels'] = channel[1]
@@ -72,11 +70,13 @@ if __name__ == '__main__':
             test_gpu = gpu
 
             # TAG ===============================================================================================
-            tag = f'single_mamba'
+            tag = f'TriDet'
 
             config['path']['dataset_path'] = os.path.join(dataset_root_path, dataset)
-            config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}_{modality}', model_set, tag)
-            config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}_{modality}', model_set, tag)
+            config['path']['log_path']      = get_log_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
+            config['path']['result_path']   = get_result_path(config, day, f'{dataset_name}_{dataset}', model_set, tag)
+
+            config['path']['basic_path']['python_path'] = python_path
 
             config['dataset']['dataset_name'] = dataset_name
             config['dataset']['clip_length'] = 1500
