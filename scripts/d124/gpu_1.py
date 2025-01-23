@@ -27,14 +27,14 @@ config = get_basic_config()
 if __name__ == '__main__':
 
     day = get_day()
-    tag = 'ushape'
+    tag = 'fusion_tsse'
 
-    model_arc_name = 'TAD_muti_none'
+    model_arc_name = 'TAD_muti_weight_tess'
     gpu = 0
 
     model_str_list = [
-        ('Ushape', 16, 80, {'layer': 8, 'i': 3}),
-        ('Ushape', 16, 80, {'layer': 8, 'i': 4}),
+        ('mamba', 8, 80, {'layer': 8, 'i': 1}),
+        ('mamba', 8, 80, {'layer': 8, 'i': 1}),
     ]
 
     dataset_str_list = [

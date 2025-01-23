@@ -9,7 +9,7 @@ from model.TAD.backbone import TSSE, LSREF
 from model.mamba.necks import FPNIdentity
 from model.TriDet.backbones import SGPBackbone
 from model.TemporalMaxer.backbones import ConvPoolerBackbone
-from model.Ushape.backbones import UNetBackbone
+from model.Ushape.backbones import UNetBackbone, UNetBackbone2
 from model.models import register_backbone_config, register_backbone
 
 @register_backbone_config('mamba')
@@ -360,6 +360,8 @@ class Ushape_config(Config):
         # Backbone 配置
         self.in_channels = 128
         self.filters = [128, 256, 512, 1024, 2048, 4096]
+        self.layers=3
+        self.branch_layer=2
         self.update(cfg)    # update ---------------------------------------------
 
 
@@ -368,10 +370,12 @@ class Ushape(nn.Module):
     def __init__(self, config: Ushape_config):
         super(Ushape, self).__init__()
 
-        # Transformer Backbone
-        self.backbone = UNetBackbone(
+        # Transformer Backbone in_channels = 64, branch_layer=4, layers=3, unet_branch_layers=2
+        self.backbone = UNetBackbone2(
             in_channels=config.in_channels,
-            filters=config.filters
+            layers=config.layers,
+            branch_layer=4,
+            unet_branch_layers=config.branch_layer
         )
         self.initialize_weights()
 

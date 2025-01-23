@@ -19,9 +19,11 @@ if __name__ == '__main__':
 
     cfg = {
         "model": {
-            "name": "TAD_muti_none",
+            # "name": "TAD_muti_none",
+            "name": "TAD_muti_weight_tess",
             # "backbone_name": "ActionMamba",
-            "backbone_name": "Ushape",
+            # "backbone_name": "Ushape",
+            "backbone_name": "mamba",
             "modality": "imu",
             "in_channels": 30,
             # "embed_type": "Down",
@@ -33,7 +35,7 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
     # train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='imu')
     train_dataset = WWADLDatasetMuti('/root/shared-nvme/dataset/all_30_3')
-    batch_size = 4
+    batch_size = 8
     train_data_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -54,5 +56,4 @@ if __name__ == '__main__':
         print(f"Batch {i} labels: {len(label_batch)}")
         data_batch = _to_var(data_batch, 'cuda')
         output = model(data_batch)
-
         break

@@ -2,7 +2,7 @@ import os
 from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path
 
 
-def prepare_config(model_arc_name, dataset_str, model_str, config, gpu, day, dataset_root_path, python_path, tag):
+def prepare_config(model_arc_name, dataset_str, model_str, config, gpu, day, dataset_root_path, python_path, tag, gpus=None):
     dataset_name, dataset, channel, modality = dataset_str
     model_name, batch_size, epoch, model_config = model_str
     model_set = model_name
@@ -11,7 +11,10 @@ def prepare_config(model_arc_name, dataset_str, model_str, config, gpu, day, dat
     
     config['datetime'] = get_time()
     config["training"]["DDP"]["enable"] = True
-    config["training"]["DDP"]["devices"] = [gpu]
+    if gpus:
+        config["training"]["DDP"]["devices"] = gpus
+    else:
+        config["training"]["DDP"]["devices"] = [gpu]
     config["model"]['num_classes'] = 30
     config["dataset"]['num_classes'] = 30
     config["model"]['name'] = model_arc_name

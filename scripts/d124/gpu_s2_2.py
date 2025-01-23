@@ -11,8 +11,8 @@ project_path = '/root/shared-nvme/code/WWADL_code_mac'
 dataset_root_path = '/root/shared-nvme/dataset'
 causal_conv1d_path = '/root/shared-nvme/causal-conv1d'
 mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
-python_path = '/root/.conda/envs/mamba/bin/python'
-# python_path = '/root/.conda/envs/t1/bin/python'
+# python_path = '/root/.conda/envs/mamba/bin/python'
+python_path = '/root/.conda/envs/t1/bin/python'
 sys.path.append(project_path)
 os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
 
@@ -27,14 +27,16 @@ config = get_basic_config()
 if __name__ == '__main__':
 
     day = get_day()
-    tag = 'ushape'
+    tag = 'fusion_backbone'
 
-    model_arc_name = 'TAD_muti_none'
-    gpu = 0
+    model_arc_name = 'TAD_muti_weight_backbone'
+    gpu = 1
+    # gpus = [0, 1]
+    gpus = None
 
     model_str_list = [
-        ('Ushape', 16, 80, {'layer': 8, 'i': 3}),
-        ('Ushape', 16, 80, {'layer': 8, 'i': 4}),
+        ('mamba', 8, 80, {'layer': 8, 'i': 3}),
+        ('mamba', 8, 80, {'layer': 8, 'i': 4}),
     ]
 
     dataset_str_list = [
@@ -47,7 +49,7 @@ if __name__ == '__main__':
             model_name, batch_size, epoch, model_config, *others = model_str
 
             # 调用提取的函数
-            updated_config = prepare_config(model_arc_name, dataset_str, model_str, config, gpu, day, dataset_root_path, python_path, tag)
+            updated_config = prepare_config(model_arc_name, dataset_str, model_str, config, gpu, day, dataset_root_path, python_path, tag, gpus=gpus)
 
             test_gpu = gpu
 
