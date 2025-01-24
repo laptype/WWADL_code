@@ -287,8 +287,8 @@ class Trainer(object):
 
             self.scheduler.step()
 
-            if epoch == 54:
-                saver.save_model(self.model.state_dict(), f"{self.model_info}_55-epoch-{epoch}", cost_val, is_save=True)
+            # if epoch == 54:
+            #     saver.save_model(self.model.state_dict(), f"{self.model_info}_55-epoch-{epoch}", cost_val, is_save=True)
             
             # 保存当前模型
             saver.save_model(self.model.state_dict(), f"{self.model_info}-epoch-{epoch}", cost_val)
