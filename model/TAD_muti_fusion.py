@@ -82,14 +82,6 @@ class TAD_muti_weight_grc(nn.Module):
         self.embedding_imu = Embedding(config.imu_in_channels, stride=1)
         self.embedding_wifi = Embedding(config.wifi_in_channels, stride=1)
 
-        # if config.embed_type == 'Norm':
-        #     self.embedding = NoneEmbedding()
-        # else:
-        #     self.embedding = TADEmbedding_pure(config.imu_in_channels, out_channels=512, layer=3, input_length=config.input_length)
-
-        # self.embedding_tsse_imu = TADEmbedding_pure(config.imu_in_channels, out_channels=512, layer=3, input_length=config.input_length)
-        # self.embedding_tsse_wifi = TADEmbedding_pure(config.wifi_in_channels, out_channels=512, layer=3, input_length=config.input_length)
-
         self.fusion = GatedFusionWeight(hidden_size=config.out_channels)
 
         self.embedding = TADEmbedding_pure(config.out_channels, out_channels=512, layer=3, input_length=config.input_length)

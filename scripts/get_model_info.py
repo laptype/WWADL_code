@@ -22,7 +22,8 @@ def load_setting(url: str)->dict:
         return data
     
 test_model_list = [
-    '/root/shared-nvme/code_result/result/25_01-21/muti_w/WWADLDatasetMuti_all_30_3_wifiTAD'
+    '/root/shared-nvme/code_result/result/25_01-23/fusion_grc/WWADLDatasetMuti_all_30_3_mamba_layer_8_i_1',
+    # '/root/shared-nvme/code_result/result/25_01-21/muti_w/WWADLDatasetMuti_all_30_3_wifiTAD'
     # '/root/shared-nvme/code_result/result/25_01-22/TriDet/WWADLDatasetMuti_all_30_3_TriDet_i_2',
     # '/root/shared-nvme/code_result/result/25_01-22/TemporalMaxer/WWADLDatasetMuti_all_30_3_TemporalMaxer_i_1',
     # '/root/shared-nvme/code_result/result/25_01-22/ActionMamba/WWADLDatasetMuti_all_30_3_ActionMamba_layer_8_i_1'
