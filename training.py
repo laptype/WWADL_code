@@ -20,7 +20,9 @@ def train(config, type = 'dp'):
     train_dataset = init_dataset(config)
 
     model_cfg = make_model_config(config['model']['backbone_name'], config['model'])
+    logger.info(f"Initializing model with backbone: {config['model']['backbone_name']} ...")
     model = make_model(config['model']['name'], model_cfg)
+    logger.info(f"Model {config['model']['name']} initialized successfully.")
     config['model'] = model_cfg.get_dict()
     write_setting(config)
     log_info = 'model params: ' + str(sum(p.numel() for p in model.parameters() if p.requires_grad))

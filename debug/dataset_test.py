@@ -18,16 +18,17 @@ if __name__ == '__main__':
     # from torch.utils.data import DataLoader
 
     receivers_to_keep = {
-        'imu': ['lh', 'rh', 'lp', 'rp'],
+        'imu': ['lh', 'rh', 'lp'],
         'wifi': True,
-        'airpods': True
+        'airpods': True,
+        'channel': (30, 270)
     }
     # receivers_to_keep = {
     #     'imu': None,
     #     'wifi': True,
     #     'airpods': None
     # }
-    receivers_to_keep = None
+    # receivers_to_keep = None
 
 
     # dataset = WWADLDatasetMutiAll('/root/shared-nvme/dataset/XRFV2', split='train', receivers_to_keep=receivers_to_keep)
@@ -59,7 +60,7 @@ if __name__ == '__main__':
 
     config['path']['dataset_path'] = '/root/shared-nvme/dataset/XRFV2'
 
-    dataset = WWADLDatasetTestMutiALL(config=config)
+    dataset = WWADLDatasetTestMutiALL(config=config, receivers_to_keep=receivers_to_keep)
 
     # dataset = WWADLDatasetTestMuti(config=config)
 

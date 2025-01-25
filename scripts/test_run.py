@@ -3,7 +3,7 @@ import sys
 import json
 
 # 定义路径
-project_path = '/root/shared-nvme/code/WWADL_code'
+project_path = '/root/shared-nvme/code/WWADL_code_mac'
 dataset_root_path = '/root/shared-nvme/dataset'
 causal_conv1d_path = '/root/shared-nvme/video-mamba-suite/causal-conv1d'
 mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
@@ -31,7 +31,9 @@ test_model_list = [
     # '/root/shared-nvme/code_result/result/25_01-16/muti_mamba_imu/WWADLDatasetMuti_all_30_3_mamba_layer_8'
     # '/root/shared-nvme/code_result/result/25_01-16/muti_mamba/WWADLDatasetMuti_all_30_3_mamba_layer_8',
     # '/root/shared-nvme/code_result/result/25_01-16/single_mamba/WWADLDatasetSingle_all_30_3_mamba_layer_8'
-    '/root/shared-nvme/code_result/result/25_01-17/muti_mamba_wifi/WWADLDatasetMuti_all_30_3_mamba_layer_8'
+    # '/root/shared-nvme/code_result/result/25_01-17/muti_mamba_wifi/WWADLDatasetMuti_all_30_3_mamba_layer_8',
+    # '/root/shared-nvme/code_result/result/25_01-23/fusion_grc/WWADLDatasetMuti_all_30_3_mamba_layer_8_i_1',
+    '/root/shared-nvme/code_result/result/25_01-25/single_imu_test/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lp'
 ]
 
 
@@ -39,9 +41,9 @@ for test_model_path in test_model_list:
     config = load_setting(os.path.join(test_model_path, 'setting.json'))
 
     config['path']['dataset_root_path'] = '/root/shared-nvme/WWADL'
-    config['path']['dataset_path'] = '/root/shared-nvme/dataset/wifi_30_3'
-    config['dataset']['dataset_name'] = 'WWADLDatasetSingle'
-    config["model"]["modality"] = 'wifi'
+    # config['path']['dataset_path'] = '/root/shared-nvme/dataset/wifi_30_3'
+    # config['dataset']['dataset_name'] = 'WWADLDatasetSingle'
+    # config["model"]["modality"] = 'wifi'
 
     run = Run_config(config, 'train')
 
