@@ -58,7 +58,7 @@ class WWADLDatasetTestSingle():
 
         # 设置接收器过滤规则和新映射
         self.device_keep_list = device_keep_list
-        # print(f"device_keep_list: {self.device_keep_list}")
+        print(f"device_keep_list: {self.device_keep_list}")
         self.new_mapping = self.info['segment_info'].get('new_mapping', None)
 
         # 定义模态数据集映射
@@ -71,8 +71,8 @@ class WWADLDatasetTestSingle():
 
         # 加载分段和目标信息
         segment_info = self.info['segment_info']['train']
-        self.clip_length = segment_info['window_len']
-        self.stride = segment_info['window_step']
+        self.clip_length = segment_info[modality]['window_len']
+        self.stride = segment_info[modality]['window_step']
         self.target_len = self.info['segment_info']['target_len']
 
         # 加载评估标签路径
@@ -85,6 +85,8 @@ class WWADLDatasetTestSingle():
         self.id_to_action = self.info['segment_info'].get('id2action', id_to_action)
 
         self.normalize = True
+
+
 
     def load_global_stats(self):
         """

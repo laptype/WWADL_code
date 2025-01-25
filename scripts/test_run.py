@@ -33,7 +33,23 @@ test_model_list = [
     # '/root/shared-nvme/code_result/result/25_01-16/single_mamba/WWADLDatasetSingle_all_30_3_mamba_layer_8'
     # '/root/shared-nvme/code_result/result/25_01-17/muti_mamba_wifi/WWADLDatasetMuti_all_30_3_mamba_layer_8',
     # '/root/shared-nvme/code_result/result/25_01-23/fusion_grc/WWADLDatasetMuti_all_30_3_mamba_layer_8_i_1',
-    '/root/shared-nvme/code_result/result/25_01-25/single_imu_test/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lp'
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu_test/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lp',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_2-imuall',
+    # '/root/shared-nvme/code_result/result/25_01-23/ushape/WWADLDatasetMuti_all_30_3_Ushape_layer_8_i_2',
+    # '/root/shared-nvme/code_result/result/25_01-23/ushape/WWADLDatasetMuti_all_30_3_Ushape_layer_8_i_3',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-wi',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_2-imuall',
+
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-ar',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-gl',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lh',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lp',
+    '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rh',
+    '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rhrpai',
+    '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rpai',
+    '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rpglai',
+    ''
+    ''
 ]
 
 
@@ -47,7 +63,7 @@ for test_model_path in test_model_list:
 
     run = Run_config(config, 'train')
 
-    test_gpu = 0
+    test_gpu = 1
 
     # config['testing']['pt_file_name'] = 'Transformer_layer_8_-final'
     # config['model']['backbone_name'] = 'Transformer'
@@ -55,6 +71,8 @@ for test_model_path in test_model_list:
     write_setting(config)
 
     print(run.config_path)
+
+    run.python_path = '/root/.conda/envs/mamba/bin/python'
 
     os.system(
         f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
