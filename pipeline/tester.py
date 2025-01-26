@@ -174,6 +174,8 @@ class Tester(object):
         # Perform evaluation
         mAPs, average_mAP, ap = anet_detection.evaluate()
 
+        
+
         # Prepare report content
         report_lines = []
         report_lines.append("Evaluation Report")

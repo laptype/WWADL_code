@@ -80,6 +80,7 @@ class ANETdetection(object):
         # Read ground truth data.
         activity_index, cidx = {}, 0
         video_lst, t_start_lst, t_end_lst, label_lst = [], [], [], []
+        action_druation = []
         for videoid, v in data['database'].items():
             # print(v)
             if self.subset != v['subset']:
@@ -94,11 +95,20 @@ class ANETdetection(object):
                 t_start_lst.append(float(ann['segment'][0]))
                 t_end_lst.append(float(ann['segment'][1]))
                 label_lst.append(activity_index[ann['label']])
+                duration = int(float(ann['segment'][1]) - float(ann['segment'][0]))
+
+                if duration < 8 * 50:
+                    action_druation.append(0)
+                elif 8 * 50 <= duration < 12 * 50:
+                    action_druation.append(1)
+                else:
+                    action_druation.append(2)
 
         ground_truth = pd.DataFrame({'video-id': video_lst,
                                      't-start': t_start_lst,
                                      't-end': t_end_lst,
-                                     'label': label_lst})
+                                     'label': label_lst,
+                                     'duration_type': action_druation})
         if self.verbose:
             print(activity_index)
         return ground_truth, activity_index, video_lst
@@ -126,6 +136,7 @@ class ANETdetection(object):
         # Read predictions.
         video_lst, t_start_lst, t_end_lst = [], [], []
         label_lst, score_lst = [], []
+        action_druation = []
         for videoid, v in data['results'].items():
             if videoid in self.blocked_videos:
                 continue
@@ -140,11 +151,21 @@ class ANETdetection(object):
                 t_end_lst.append(float(result['segment'][1]))
                 label_lst.append(label)
                 score_lst.append(result['score'])
+                duration = int(float(result['segment'][1]) - float(result['segment'][0]))
+
+                if duration < 8 * 50:
+                    action_druation.append(0)
+                elif 8 * 50 <= duration < 12 * 50:
+                    action_druation.append(1)
+                else:
+                    action_druation.append(2)
+
         prediction = pd.DataFrame({'video-id': video_lst,
                                    't-start': t_start_lst,
                                    't-end': t_end_lst,
                                    'label': label_lst,
-                                   'score': score_lst})
+                                   'score': score_lst,
+                                   'duration_type': action_druation})
         return prediction
 
     def _get_predictions_with_label(self, prediction_by_label, label_name, cidx):
@@ -186,9 +207,21 @@ class ANETdetection(object):
         method.
         """
         self.ap = self.wrapper_compute_average_precision()
-
         self.mAP = self.ap.mean(axis=1)
         self.average_mAP = self.mAP.mean()
+
+        clsmap = self.ap.mean(axis=0)
+
+        # Loop through each action category and print the mAP for each tIoU threshold
+        for idx, category in enumerate(self.activity_index.keys()):
+            # Extract mAP for each tIoU threshold for the current category
+            category_map_values = " & ".join([f"{self.ap[i, idx]:.4f}" for i in range(len(self.tiou_thresholds))])
+            
+            # Calculate the mean mAP for the category across all thresholds
+            mean_map = clsmap[idx]
+
+            # Print the LaTeX formatted row for the current action category
+            print(f"{category} & {category_map_values} & {mean_map:.4f} \\\\")
 
         if self.verbose:
             print ('[RESULTS] Performance on ActivityNet detection task.')
@@ -272,6 +305,14 @@ def compute_average_precision_detection(ground_truth, prediction, label_name, ti
 
     precision_cumsum = tp_cumsum / (tp_cumsum + fp_cumsum)
 
+    # if len(ground_truth) == 1:
+    #     # Directly calculate precision for each threshold and store in ap[]
+    #     for tidx in range(len(tiou_thresholds)):
+    #         precision_at_threshold = precision_cumsum[tidx, 0]  # For each threshold (0.75, 0.8, 0.85, ..., 0.95)
+    #         ap[tidx] = precision_at_threshold  # Assign precision to ap for each threshold
+
+    #     print(f"Precision values for Lying Still at each threshold: {ap}")
+    # else:
     for tidx in range(len(tiou_thresholds)):
         ap[tidx] = interpolated_prec_rec(precision_cumsum[tidx,:], recall_cumsum[tidx,:])
 
