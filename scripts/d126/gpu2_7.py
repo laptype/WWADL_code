@@ -84,8 +84,7 @@ if __name__ == '__main__':
                         f"CUDA_VISIBLE_DEVICES={test_gpu} {run.python_path} "
                         f"{run.main_path} --config_path {run.config_path}"
                     )
-
                     # 启动测试命令
-                    subprocess.run(test_command, shell=True)
+                    subprocess.Popen(test_command, shell=True)
                 else:
                     print("Training process failed. Test process will not start.")

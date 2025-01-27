@@ -282,6 +282,7 @@ def compute_average_precision_detection(ground_truth, prediction, label_name, ti
         this_gt = ground_truth_videoid.reset_index()
         tiou_arr = segment_iou(this_pred[['t-start', 't-end']].values,
                                this_gt[['t-start', 't-end']].values)
+
         # We would like to retrieve the predictions with highest tiou score.
         tiou_sorted_idx = tiou_arr.argsort()[::-1]
         for tidx, tiou_thr in enumerate(tiou_thresholds):
@@ -291,6 +292,8 @@ def compute_average_precision_detection(ground_truth, prediction, label_name, ti
                     break
                 if lock_gt[tidx, this_gt.loc[jdx]['index']] >= 0:
                     continue
+                if len(ground_truth) == 1:
+                    print(f'tiou_arr: {tiou_arr[jdx]} {label_name} {tiou_thr} {idx}') 
                 # Assign as true positive after the filters above.
                 tp[tidx, idx] = 1
                 lock_gt[tidx, this_gt.loc[jdx]['index']] = idx
@@ -304,6 +307,8 @@ def compute_average_precision_detection(ground_truth, prediction, label_name, ti
     recall_cumsum = tp_cumsum / npos
 
     precision_cumsum = tp_cumsum / (tp_cumsum + fp_cumsum)
+    # if len(ground_truth) == 1:
+    #     print(f'precision_cumsum: {precision_cumsum}')
 
     # if len(ground_truth) == 1:
     #     # Directly calculate precision for each threshold and store in ap[]

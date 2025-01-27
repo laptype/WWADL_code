@@ -44,12 +44,16 @@ test_model_list = [
     # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-gl',
     # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lh',
     # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lp',
-    '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rh',
-    '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rhrpai',
-    '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rpai',
-    '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rpglai',
-    ''
-    ''
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rh',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rhrpai',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rpai',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rpglai',
+    # '/root/shared-nvme/code_result/result/25_01-26/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rp'
+    # '/root/shared-nvme/code_result/result/25_01-26/muti/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_2-rhwi',
+    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rhrp'
+    # '/root/shared-nvme/code_result/result/25_01-26/fusion_gate_grc/WWADLDatasetMuti_all_30_3_mamba_layer_8_i_1',
+    '/root/shared-nvme/code_result/result/25_01-26/fusion_linear_grc/WWADLDatasetMuti_all_30_3_mamba_layer_8_i_1'
+    # ''
 ]
 
 

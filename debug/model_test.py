@@ -20,7 +20,7 @@ if __name__ == '__main__':
     cfg = {
         "model": {
             # "name": "TAD_muti_none",
-            "name": "TAD_muti_weight_tess",
+            "name": "TAD_muti_gate_backbone",
             # "backbone_name": "ActionMamba",
             # "backbone_name": "Ushape",
             "backbone_name": "mamba",

@@ -11,6 +11,7 @@ os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" 
 
 from dataset.wwadl_muti_all import WWADLDatasetMutiAll
 from dataset.wwadl import WWADLDatasetSingle, detection_collate
+from dataset.wwadl_muti import WWADLDatasetMuti
 from dataset.wwadl_muti_all_test import WWADLDatasetTestMutiALL
 from dataset.wwadl_muti_test import WWADLDatasetTestMuti
 if __name__ == '__main__':
@@ -58,17 +59,18 @@ if __name__ == '__main__':
 
     config = get_basic_config()
 
-    config['path']['dataset_path'] = '/root/shared-nvme/dataset/XRFV2'
+    config['path']['dataset_path'] = '/root/shared-nvme/dataset/all_15_30_3'
 
-    dataset = WWADLDatasetTestMutiALL(config=config, receivers_to_keep=receivers_to_keep)
-
-    # dataset = WWADLDatasetTestMuti(config=config)
+    # dataset = WWADLDatasetTestMutiALL(config=config, receivers_to_keep=receivers_to_keep)
+    
+    dataset = WWADLDatasetTestMuti(config)
+    # print(dataset.shape())
 
     for file_name, data in dataset.dataset():
         print(file_name)
-        for d, segment in data:
-            for key, value in d.items():
-                print(f"{key} {value.shape}", end=' ')
-            print(segment)
+        # for d, segment in data:
+            # for key, value in d.items():
+            #     print(f"{key} {value.shape}", end=' ')
+            # print(segment)
             # break
-        break
+        # break
