@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import json
 
 # 定义路径
@@ -10,52 +11,71 @@ mamba_path = '/root/shared-nvme/video-mamba-suite/mamba'
 sys.path.append(project_path)
 
 os.environ["PYTHONPATH"] = f"{project_path}:{causal_conv1d_path}:{mamba_path}:" + os.environ.get("PYTHONPATH", "")
+import argparse
 from utils.setting import get_day, get_time, write_setting, get_result_path, get_log_path, Run_config
+
+def init_configs():
+    parser = argparse.ArgumentParser(description="WiVio study")
+    parser.add_argument('--gpu', dest="gpu", required=False, type=int, default=0,
+                        help="gpu")
+    args = parser.parse_args()
+
+    return args
 
 def load_setting(url: str)->dict:
     with open(url, 'r') as f:
         data = json.load(f)
         return data
 
-test_model_list = [
-    # '/root/shared-nvme/code_result/result/25_01-09/model_size/WWADLDatasetSingle_wifi_30_3_34_2048_270_1',
-    # '/root/shared-nvme/code_result/result/25_01-09/model_size/WWADLDatasetSingle_imu_30_3_34_2048_30_1',
-    # '/root/shared-nvme/code_result/result/25_01-09/device/WWADLDatasetSingle_wifi_30_3_0_34_2048_90_0',
-    # '/root/shared-nvme/code_result/result/25_01-10/test/WWADLDatasetSingle_imu_30_3_34_2048_30_0',
-    # '/root/shared-nvme/code_result/result/25_01-10/test/WWADLDatasetSingle_wifi_30_3_34_2048_270_0',
-    # '/root/shared-nvme/code_result/result/25_01-10/test2/WWADLDatasetSingle_imu_30_3_34_2048_30_0',
-    # '/root/shared-nvme/code_result/result/25_01-10/test2/WWADLDatasetSingle_wifi_30_3_34_2048_270_0',
-    # '/root/shared-nvme/code_result/result/25_01-12/mambaimu_head_layer/WWADLDatasetSingle_imu_30_3_34_2048_30_l-12',
-    # '/root/shared-nvme/code_result/result/25_01-16/muti/WWADLDatasetMuti_all_30_3_layer_8_',
-    # '/root/shared-nvme/code_result/result/25_01-16/single/WWADLDatasetSingle_all_30_3_',
-    # '/root/shared-nvme/code_result/result/25_01-16/muti_mamba_imu/WWADLDatasetMuti_all_30_3_mamba_layer_8'
-    # '/root/shared-nvme/code_result/result/25_01-16/muti_mamba/WWADLDatasetMuti_all_30_3_mamba_layer_8',
-    # '/root/shared-nvme/code_result/result/25_01-16/single_mamba/WWADLDatasetSingle_all_30_3_mamba_layer_8'
-    # '/root/shared-nvme/code_result/result/25_01-17/muti_mamba_wifi/WWADLDatasetMuti_all_30_3_mamba_layer_8',
-    # '/root/shared-nvme/code_result/result/25_01-23/fusion_grc/WWADLDatasetMuti_all_30_3_mamba_layer_8_i_1',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu_test/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lp',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_2-imuall',
-    # '/root/shared-nvme/code_result/result/25_01-23/ushape/WWADLDatasetMuti_all_30_3_Ushape_layer_8_i_2',
-    # '/root/shared-nvme/code_result/result/25_01-23/ushape/WWADLDatasetMuti_all_30_3_Ushape_layer_8_i_3',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-wi',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_2-imuall',
+def get_checkpoint_epoch_49(checkpoint_path):
+    # 获取目录中的所有文件
+    all_files = os.listdir(checkpoint_path)
+    # print(all_files)
+    
+    # 正则表达式匹配 49 epoch 的文件名
+    pattern = re.compile(r".*-epoch-(49)\.pt$")
+    
+    # 查找是否存在 epoch-49 的文件
+    for file in all_files:
+        if pattern.match(file):
+            return file  # 找到就返回文件名
+    
+    return None  # 如果没有符合条件的文件
 
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-ar',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-gl',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lh',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-lp',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rh',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rhrpai',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rpai',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rpglai',
-    # '/root/shared-nvme/code_result/result/25_01-26/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rp'
-    # '/root/shared-nvme/code_result/result/25_01-26/muti/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_2-rhwi',
-    # '/root/shared-nvme/code_result/result/25_01-25/single_imu/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-rhrp'
-    # '/root/shared-nvme/code_result/result/25_01-26/fusion_gate_grc/WWADLDatasetMuti_all_30_3_mamba_layer_8_i_1',
-    '/root/shared-nvme/code_result/result/25_01-26/fusion_linear_grc/WWADLDatasetMuti_all_30_3_mamba_layer_8_i_1'
-    # ''
-]
+args = init_configs()
+gpu = args.gpu
 
+run_list = {
+    0: [
+        '/root/shared-nvme/code_result/result/25_01-30/persion2/WWADLDatasetMuti_all_2_30_3_mamba_layer_8_i_1',
+        # '/root/shared-nvme/code_result/result/25_01-30/persion1/WWADLDatasetMuti_all_1_30_3_mamba_layer_8_i_1'
+        # '/root/shared-nvme/code_result/result/25_01-26/persion3/WWADLDatasetMuti_all_3_30_3_mamba_layer_8_i_1'
+        # '/root/shared-nvme/code_result/result/25_01-26/persion9/WWADLDatasetMuti_all_9_30_3_mamba_layer_8_i_1',
+        # '/root/shared-nvme/code_result/result/25_01-26/persion14/WWADLDatasetMuti_all_9_30_3_mamba_layer_8_i_1'
+        # '/root/shared-nvme/code_result/result/25_01-28/device1/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-1',
+        # '/root/shared-nvme/code_result/result/25_01-28/device2/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-2',
+        # '/root/shared-nvme/code_result/result/25_01-28/device8/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-8',
+        # '/root/shared-nvme/code_result/result/25_01-28/device9/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-9', 
+    ],
+    1: [
+        '/root/shared-nvme/code_result/result/25_01-30/persion4/WWADLDatasetMuti_all_4_30_3_mamba_layer_8_i_1'
+        # '/root/shared-nvme/code_result/result/25_01-28/device12/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-12',
+        # '/root/shared-nvme/code_result/result/25_01-28/device13/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-13',
+        # '/root/shared-nvme/code_result/result/25_01-28/device14/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-14',
+        # '/root/shared-nvme/code_result/result/25_01-28/device15/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-15',
+    ],
+    2: [
+        '/root/shared-nvme/code_result/result/25_01-30/persion5/WWADLDatasetMuti_all_5_30_3_mamba_layer_8_i_1'
+        # '/root/shared-nvme/code_result/result/25_01-28/device17/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-17',
+        # '/root/shared-nvme/code_result/result/25_01-28/device18/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-18',
+    ],
+    3: [
+        # '/root/shared-nvme/code_result/result/25_01-28/device19/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-19',
+        # '/root/shared-nvme/code_result/result/25_01-28/device20/WWADLDatasetMutiAll_XRFV2_mamba_layer_8_i_1-20',
+    ]
+}
+
+test_model_list = run_list[gpu]
 
 for test_model_path in test_model_list:
     config = load_setting(os.path.join(test_model_path, 'setting.json'))
@@ -67,10 +87,11 @@ for test_model_path in test_model_list:
 
     run = Run_config(config, 'train')
 
-    test_gpu = 1
-
-    # config['testing']['pt_file_name'] = 'Transformer_layer_8_-final'
+    test_gpu = gpu
+    # config['testing']['pt_file_name'] = get_checkpoint_epoch_49(test_model_path)
     # config['model']['backbone_name'] = 'Transformer'
+
+    # print(config['testing']['pt_file_name'])
 
     write_setting(config)
 

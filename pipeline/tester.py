@@ -192,11 +192,17 @@ class Tester(object):
         # Define report file path
         report_filename = os.path.join(self.checkpoint_path, "evaluation_report.txt")
 
-        # Save report to file
+        # Check if the file exists
+        file_exists = os.path.exists(report_filename)
+
+        # Save report to file (append if exists, create if not)
         try:
-            with open(report_filename, "w") as report_file:
-                report_file.write(report_content)
-            print(f"Evaluation report saved to: {report_filename}")
+            with open(report_filename, "a" if file_exists else "w") as report_file:
+                if file_exists:
+                    report_file.write("\n" + report_content)  # Append with a newline
+                else:
+                    report_file.write(report_content)  # Write normally if file is new
+            print(f"Evaluation report {'appended to' if file_exists else 'saved to'}: {report_filename}")
         except Exception as e:
             print(f"Error saving evaluation report: {e}")
 
