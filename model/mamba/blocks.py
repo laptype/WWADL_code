@@ -423,7 +423,7 @@ class LocalMaskedMHCA(nn.Module):
         # use `as_strided` to make the chunks overlap with an overlap size = window_overlap
         chunk_size = list(x.size())
         chunk_size[1] = chunk_size[1] * 2 - 1
-        chunk_stride = list(x.stride())
+        chunk_stride = list(x.embedding_stride())
         chunk_stride[1] = chunk_stride[1] // 2
 
         # B x nh, #chunks = T//w - 1, 2w, hs

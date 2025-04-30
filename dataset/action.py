@@ -24,7 +24,7 @@ translations = {
 }
 
 # Create id_to_action mapping
-id_to_action = {v: translations[k] for k, v in action_to_id.items()}
+id_to_action = {str(v): translations[k] for k, v in action_to_id.items()}
 
 english_action_to_id = {translations[k]: v for k, v in action_to_id.items()}
 # Output results

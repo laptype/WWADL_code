@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 
 
 class WWADLDatasetSingle(Dataset):
-    def __init__(self, dataset_dir, split="train", normalize=True, modality = None):
+    def __init__(self, dataset_dir, split="train", normalize=True, modality = None, device_keep_list=None):
         """
         初始化 WWADL 数据集。
         :param dataset_dir: 数据集所在目录路径。
@@ -25,6 +25,8 @@ class WWADLDatasetSingle(Dataset):
         self.info_path = os.path.join(dataset_dir, f"info.json")
         self.stats_path = os.path.join(dataset_dir, "global_stats.json")  # 保存均值和方差的路径
 
+        self.device_keep_list = device_keep_list
+        # print(f"device_keep_list: {device_keep_list}")
 
         with open(self.info_path, 'r') as json_file:
             self.info = json.load(json_file)
@@ -61,12 +63,17 @@ class WWADLDatasetSingle(Dataset):
 
                 if self.modality == 'imu':
                     # IMU 数据：转换为 [30, 2048]
-
                     sample = sample.transpose(1, 2, 0).reshape(-1, sample.shape[0])  # [30, 2048]
 
                 if self.modality == 'wifi':
                     # WiFi 数据：转换为 [270, 2048]
                     sample = sample.transpose(1, 2, 3, 0).reshape(-1, sample.shape[0])  # [270, 2048]
+                
+                if self.modality == 'airpods':
+                    acceleration = sample[:, 3:6]  # 加速度: X, Y, Z (列索引 3 到 5)
+                    rotation = sample[:, 6:9]      # 角速度: X, Y, Z (列索引 6 到 8)
+                    # 将加速度和角速度合并成新的数组
+                    sample = np.hstack((acceleration, rotation)).reshape(-1, sample.shape[0])
 
                 # 转为 torch.Tensor
                 sample = torch.tensor(sample, dtype=torch.float32)
@@ -144,21 +151,13 @@ class WWADLDatasetSingle(Dataset):
         # 转换为 Tensor
         sample = torch.tensor(sample, dtype=torch.float32)
 
+        # 根据模态处理数据
         if self.modality == 'imu':
-            sample = sample.permute(1, 2, 0)  # [5, 6, 2048]
-            sample = sample.reshape(-1, sample.shape[-1])  # [5*6=30, 2048]
-        if self.modality == 'wifi':
-            # [2048, 3, 3, 30]
-            sample = sample.permute(1, 2, 3, 0)  # [3, 3, 30, 2048]
-            sample = sample.reshape(-1, sample.shape[-1])  # [3*3*30, 2048]
-
-        # 全局归一化：使用序列维度的均值和标准差
-        if self.normalize:
-            sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
-                     (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
-
-        # 替换 NaN 和 Inf
-        # sample = torch.nan_to_num(sample, nan=0.0, posinf=0.0, neginf=0.0)
+            sample = self.process_imu(sample)
+        elif self.modality == 'wifi':
+            sample = self.process_wifi(sample)
+        elif self.modality == 'airpods':
+            sample = self.process_airpods(sample)
 
         if torch.isnan(sample).any() or torch.isinf(sample).any():
             raise ValueError("Input contains NaN or Inf values.")
@@ -168,30 +167,91 @@ class WWADLDatasetSingle(Dataset):
         # 将类别部分（最后一列）单独转换为整数
         label[:, -1] = label[:, -1].to(torch.long)  # 或者直接使用 label[:, -1] = label[:, -1].int()
 
-        return sample, label
+        data = {
+            self.modality: sample
+        }
+
+        return data, label
+
+    def process_imu(self, sample):
+        sample = sample.permute(1, 2, 0)  # [5, 6, 2048]
+        device_num = sample.shape[0]
+        imu_channel = sample.shape[1]
+        sample = sample.reshape(-1, sample.shape[-1])  # [5*6=30, 2048]
+        # 全局归一化：使用序列维度的均值和标准差
+        if self.normalize:
+            sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
+                     (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
+            
+        if self.device_keep_list:
+            # 1. sample [5*6=30, 2048] -> [5, 6, 2048]
+            sample = sample.reshape(device_num, imu_channel, -1)  # [5, 6, 2048]
+            # 2. 保留设备 [5, 6, 2048] -> [2, 6, 2048] 保留设备 2, 3
+            sample = sample[self.device_keep_list]  # [len(device_keep_list), 6, 2048]
+            # 3. [2, 6, 2048] -> [2*6=12, 2048]
+            sample = sample.reshape(-1, sample.shape[-1])  # [5*6=30, 2048]
+        
+        return sample
+
+    def process_wifi(self, sample):
+        # WiFi数据处理
+        # [2048, 3, 3, 30]
+        sample = sample.permute(1, 2, 3, 0)  # [3, 3, 30, 2048]
+        sample = sample.reshape(-1, sample.shape[-1])  # [3*3*30, 2048]
+        
+        # 全局归一化：使用序列维度的均值和标准差
+        if self.normalize:
+            sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
+                     (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
+        return sample
+
+    def process_airpods(self, sample):
+        # AirPods 数据处理：处理加速度和角速度
+        acceleration = sample[:, 3:6]  # 加速度: X, Y, Z (列索引 3 到 5)
+        rotation = sample[:, 6:9]      # 角速度: X, Y, Z (列索引 6 到 8)
+        
+        # 合并加速度和角速度数据 [2048, 6]
+        sample = torch.cat((acceleration, rotation), dim=1)  # [2048, 6]
+        
+        # 转置为 [6, 2048]
+        sample = sample.T  # 转置为 [6, 2048]
+        
+        # 全局归一化：使用序列维度的均值和标准差
+        if self.normalize:
+            sample = (sample - torch.tensor(self.global_mean, dtype=torch.float32)[:, None]) / \
+                     (torch.tensor(self.global_std, dtype=torch.float32)[:, None] + 1e-6)
+        return sample
 
 def detection_collate(batch):
-    clips = []
+    clips = {key: [] for key in batch[0][0].keys()}
     targets = []
     for sample in batch:
-        clips.append(sample[0])
+        data_dict = sample[0]  # Extract the data dictionary
         target = sample[1]
+
+        # Stack each modality separately
+        for key in data_dict.keys():
+            clips[key].append(data_dict[key])
 
         # 将类别部分单独转换为整数
         target[:, -1] = target[:, -1].to(torch.long)
-
         targets.append(target)
-    return torch.stack(clips, 0), targets
+
+    # Stack each modality in the clips dictionary
+    for key in clips.keys():
+        clips[key] = torch.stack(clips[key], 0)
+
+    return clips, targets
 
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
     train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='imu')
-    train_dataset_2 = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='wifi')
+    # train_dataset_2 = WWADLDatasetSingle('/root/shared-nvme/dataset/all_30_3', split='train', modality='wifi')
     # train_dataset = WWADLDatasetSingle('/root/shared-nvme/dataset/wifi_30_3', split='train')
 
     from torch.utils.data import DataLoader
-    from model import wifiTAD, wifiTAD_config, WifiMamba_config, WifiMamba, WifiMambaSkip_config, WifiMambaSkip
+    from model import wifiTAD, wifiTAD_config, WifiMamba_config, WifiMamba, WifiMambaSkip_config, WifiMambaSkip, Transformer_config, Transformer
 
     # model_cfg = WifiMamba_config('34_2048_30')
     # model = WifiMamba(model_cfg).to('cuda')
@@ -199,8 +259,11 @@ if __name__ == '__main__':
     # model_cfg = wifiTAD_config('34_2048_30_0')
     # model = wifiTAD(model_cfg).to('cuda')
 
-    model_cfg = WifiMambaSkip_config('34_2048_30')
-    model = WifiMambaSkip(model_cfg).to('cuda')
+    # model_cfg = WifiMambaSkip_config('34_2048_30')
+    # model = WifiMambaSkip(model_cfg).to('cuda')
+
+    model_cfg = Transformer_config('34_2048_30')
+    model = Transformer(model_cfg).to('cuda')
 
     # 定义 DataLoader
     batch_size = 4
@@ -218,7 +281,7 @@ if __name__ == '__main__':
         print(f"Batch {i} data shape: {data_batch.shape}")
         print(f"Batch {i} labels: {len(label_batch)}")
         data_batch = data_batch.to('cuda')
-        # output = model(data_batch)
+        output = model(data_batch)
 
         break
 

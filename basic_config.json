@@ -1,13 +1,13 @@
 {
     "datetime": "2025_01-08_22:23:51",
-    "endtime": "2025_05-17_21:52:58",
+    "endtime": "None",
     "path": {
         "dataset_path": "/root/shared-nvme/dataset/imu_30_3",
         "dataset_root_path": "/root/shared-nvme/WWADL",
         "basic_path": {
-            "project_path": "/root/shared-nvme/code/WWADL_code",
+            "project_path": "/root/shared-nvme/code/WWADL_code_mac",
             "python_path": "/root/.conda/envs/mamba/bin/python",
-            "log_path": "/root/shared-nvme/code_result/log",
+            "log_path": "/root/shared-nvme/code_result/result",
             "result_path": "/root/shared-nvme/code_result/result"
         },
         "log_path": {
@@ -19,22 +19,25 @@
     "dataset": {
         "dataset_name": "WWADLDatasetSingle",
         "dataset_info": {},
-        "num_classes": 34,
+        "num_classes": 30,
         "clip_length": 1500,
-        "data_length": 2048
+        "data_length": 2048,
+        "in_channels": {
+            "wifi": 270,
+            "imu": 30
+        }
     },
     "model": {
+        "name": "TAD_single",
         "backbone_name": "wifiTAD",
-        "head_name": "",
-        "strategy_name": "TAD",
-        "model_set": "34_2048_30_0"
+        "modality": "imu"
     },
     "training": {
         "train_batch_size": 32,
         "num_epoch": 50,
         "opt_method": "adamw",
         "lr_rate": 4e-05,
-        "lr_rate_adjust_epoch": 15,
+        "lr_rate_adjust_epoch": 30,
         "lr_rate_adjust_factor": 0.5,
         "weight_decay": 0.001,
         "save_epoch": 501,

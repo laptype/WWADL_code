@@ -28,6 +28,12 @@ def register_hooks(model):
         if not isinstance(module, (nn.Sequential, nn.ModuleList, nn.Identity)):
             module.register_forward_hook(forward_hook(name))
 
+def _to_var(data: dict, device):
+    for key, value in data.items():
+        data[key] = value.to(device)  # Directly move tensor to device
+    return data
+
+
 def forward_hook(module_name):
     """
     钩子函数，用于检查输出是否合法。
@@ -62,9 +68,13 @@ class BestModelSaver:
         # 使用最大堆保存模型信息 [(负的metric, model_path), ...]
         self.best_models = []
 
-    def save_model(self, model_state_dict, model_name, metric):
+    def save_model(self, model_state_dict, model_name, metric, is_save=False):
         # 构造保存路径
         model_path = os.path.join(self.check_point_path, f"{model_name}.pt")
+
+        if is_save:
+            torch.save(model_state_dict, model_path)
+            return
 
         # 如果队列未满，直接保存模型
         if len(self.best_models) < self.max_models:
@@ -108,7 +118,7 @@ class Trainer(object):
         self.num_epoch = training_config['num_epoch']
 
         # loss setting -----------------------------------------------------------
-        self.loss = MultiSegmentLoss(num_classes=config['dataset']['num_classes'], clip_length=config['dataset']['clip_length'])
+        self.loss = MultiSegmentLoss(num_classes=config['model']['num_classes'], clip_length=config['dataset']['clip_length'])
         self.lw = config['loss']['lw']
         self.cw = config['loss']['cw']
 
@@ -155,7 +165,8 @@ class Trainer(object):
                                                          self.lr_rate_adjust_factor)
 
     def _train_one_step(self, data, targets):
-        data = data.to(self.device)  # 确保输入数据在正确的设备上
+        data = _to_var(data, self.device)
+        # data = data.to(self.device)  # 确保输入数据在正确的设备上
         targets = [t.to(self.device) for t in targets]
         self.optimizer.zero_grad()
 
@@ -196,19 +207,6 @@ class Trainer(object):
 
         # 反向传播
         loss.backward()
-
-        # for name, param in self.model.named_parameters():
-        #     if param.grad is not None:
-        #         if torch.isnan(param.grad).any() or torch.isinf(param.grad).any():
-        #             logging.info(f"Gradient anomaly detected in parameter: {name}")
-        #             logging.info(f"Gradient min: {param.grad.min()}, Gradient max: {param.grad.max()}")
-        #             # 清理异常梯度
-        #             param.grad = torch.nan_to_num(param.grad, nan=0.0, posinf=1.0, neginf=-1.0)
-        #             logging.info(f"Gradient for {name} has been cleaned.")
-
-        # **梯度裁剪**
-        # parameters_with_grad = [p for p in self.model.parameters() if p.grad is not None]
-        # torch.nn.utils.clip_grad_norm_(parameters_with_grad, max_norm=1.0)
 
         # 优化器更新权重
         self.optimizer.step()
@@ -289,6 +287,12 @@ class Trainer(object):
 
             self.scheduler.step()
 
+            if epoch == 49:
+                saver.save_model(self.model.state_dict(), f"{self.model_info}_50-epoch-{epoch}", cost_val, is_save=True)
+            
+            if epoch == 64:
+                saver.save_model(self.model.state_dict(), f"{self.model_info}_65-epoch-{epoch}", cost_val, is_save=True)
+
             # 保存当前模型
             saver.save_model(self.model.state_dict(), f"{self.model_info}-epoch-{epoch}", cost_val)
 
@@ -296,11 +300,13 @@ class Trainer(object):
             self.writer.add_scalar("loss_loc_val Loss", loss_loc_val, epoch)
             self.writer.add_scalar("loss_conf_val Loss", loss_conf_val, epoch)
 
-        torch.save(self.model.state_dict(),
-                   os.path.join(self.check_point_path, '%s-final' % (self.model_info)))
 
-        if os.path.exists(os.path.join(self.check_point_path, "initial_weights.pt")) is True:
-            os.remove(os.path.join(self.check_point_path, "initial_weights.pt"))
+
+        # torch.save(self.model.state_dict(),
+        #            os.path.join(self.check_point_path, '%s-final' % (self.model_info)))
+
+        # if os.path.exists(os.path.join(self.check_point_path, "initial_weights.pt")) is True:
+        #     os.remove(os.path.join(self.check_point_path, "initial_weights.pt"))
 
 
     def set_seed(self, seed):
